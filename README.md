@@ -3,7 +3,7 @@
 2. Unzip the downloaded archive and move the unzipped folder to your project's "Plugins" folder (create one if it doesn't exist).<br>
 So your project's root directory will have the "Plugins" folder and the "FWorldGenerator" folder inside it, containing the .uplugin in there.<br>
 3. If you have a Blueprint project you need to convert it to the C++ project by just doing "Add New C++ Class" inside the engine which will set up everything needed.<br>
-4. Right-click your .uproject file and click "Generate Visual Studio project files".<br>
+4. If you have code in your project: Right-click your .uproject file and click "Generate Visual Studio project files".<br>
 5. Run the project (it should build the plugin if necessary).
 6. To access the plugin in the C++ code:<br>
 In your project's .Build.cs file you must add "FWorldGenerator" to PublicDependencyModuleNames.<br>
