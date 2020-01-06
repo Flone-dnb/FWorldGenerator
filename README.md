@@ -8,6 +8,7 @@ So your project's root directory will have the "Plugins" folder and the "FWorldG
 6. To access the plugin in the C++ code:<br>
 In your project's .Build.cs file you must add "FWorldGenerator" to PublicDependencyModuleNames.<br>
 Recompile.<br>
+And now you can include "FWGen.h".<br>
 <br>
 To use the generator just place an object of the FWGen class (search in the Modes tab in UE) in your level and configure its details.<br>
 P.S. If you've added the FWGen object to the level and you can see it in the World Outliner but not on the screen then you should probably look up because the spawn point of this actor is the bottom of the generated world.<br>
