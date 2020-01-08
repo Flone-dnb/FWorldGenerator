@@ -265,9 +265,9 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 	}
 	else if (MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ViewDistance))
 	{
-		if (ViewDistance < 1)
+		if (ViewDistance < 0)
 		{
-			ViewDistance = 1;
+			ViewDistance = 0;
 		}
 		else
 		{

@@ -100,7 +100,7 @@ public:
 		bool  CreateWater = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
-		float ZWaterLevelInWorld = 0.35f;
+		float ZWaterLevelInWorld = 0.3f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 		float WaterSize = 10.0f;
@@ -216,6 +216,7 @@ public:
 private:
 
 	int32 ViewDistance;
+	// ViewDistance == 0  ---  Always loaded only one chunk.
 	// ViewDistance == 1  ---  Always loaded chunks: 3x3.
 	// ViewDistance == 2  ---  Always loaded chunks: 5x5.
 	// ViewDistance == 3  ---  Always loaded chunks: 7x7.
