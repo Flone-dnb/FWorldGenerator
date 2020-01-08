@@ -18,6 +18,3 @@ void FFWorldGeneratorModule::ShutdownModule()
 #undef LOCTEXT_NAMESPACE
 	
 IMPLEMENT_MODULE(FFWorldGeneratorModule, FWorldGenerator)
-
-//#include "FWorldGenerator.h"
-//IMPLEMENT_PRIMARY_GAME_MODULE(FDefaultGameModuleImpl, FWorldGenerator, "FWorldGenerator");
