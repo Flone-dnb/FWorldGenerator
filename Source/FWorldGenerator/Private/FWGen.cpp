@@ -219,8 +219,7 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 		||
 		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WaterMaterial)
 		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GroundMaterial)
-		)
+		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GroundMaterial) )
 	{
 		if (ZWaterLevelInWorld < 0.0f)
 		{
@@ -265,9 +264,9 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 	}
 	else if (MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ViewDistance))
 	{
-		if (ViewDistance < 0)
+		if (ViewDistance < 1)
 		{
-			ViewDistance = 0;
+			ViewDistance = 1;
 		}
 		else
 		{
@@ -275,6 +274,13 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 			pChunkMap = nullptr;
 
 			if (ComplexPreview) GenerateWorld();
+		}
+	}
+	else if (MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WorldSize))
+	{
+		if (WorldSize < -1)
+		{
+			WorldSize = -1;
 		}
 	}
 }

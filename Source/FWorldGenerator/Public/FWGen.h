@@ -90,6 +90,17 @@ public:
 
 
 
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World")
+		int32 WorldSize = 0;
+	// 0   ---  infinite
+	// -1  ---  only 1 chunk
+	// 1   ---  only 1 ViewDistance size
+	// 2   ---  only 2 ViewDistance sizes
+
+
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
 		UMaterialInterface* GroundMaterial;
 
@@ -216,7 +227,6 @@ public:
 private:
 
 	int32 ViewDistance;
-	// ViewDistance == 0  ---  Always loaded only one chunk.
 	// ViewDistance == 1  ---  Always loaded chunks: 3x3.
 	// ViewDistance == 2  ---  Always loaded chunks: 5x5.
 	// ViewDistance == 3  ---  Always loaded chunks: 7x7.
