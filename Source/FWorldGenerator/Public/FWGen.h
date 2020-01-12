@@ -21,7 +21,6 @@ class UBoxComponent;
 #endif // WITH_EDITOR
 
 
-
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------
@@ -42,17 +41,18 @@ public:
 
 
 	UFUNCTION(BlueprintCallable, Category = "Procedural Generation")
-		bool          GenerateWorld();
+		void          GenerateWorld();
 
 #if WITH_EDITOR
 	virtual void  PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	virtual void  PostEditMove          (bool bFinished);
 #endif // WITH_EDITOR
 
 
 
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
-		bool  ComplexPreview = true;
+		bool  ComplexPreview = false;
 #endif // WITH_EDITOR
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
@@ -62,10 +62,10 @@ public:
 		int32 ChunkPieceColumnCount = 100;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		float ChunkPieceSizeX = 400.0f;
+		float ChunkPieceSizeX = 500.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		float ChunkPieceSizeY = 400.0f;
+		float ChunkPieceSizeY = 500.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
 		int32 ViewDistance = 1;
@@ -80,7 +80,7 @@ public:
 		int32 GenerationOctaves = 7;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		int32 GenerationSeed = 0.0f;
+		int32 GenerationSeed = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
 		int32 GenerationMaxZFromActorZ = 15000.0f;
@@ -131,8 +131,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Default)
 		USceneComponent* pRootNode;
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Default)
-	//	UProceduralMeshComponent* pCentralMeshComponent
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Default)
 		UStaticMeshComponent* WaterPlane;
 
@@ -145,6 +144,7 @@ protected:
 private:
 
 	void generateChunk(FWGenChunk* pChunk);
+	void generateSeed();
 
 #if WITH_EDITOR
 	void refreshPreview();
@@ -152,6 +152,12 @@ private:
 
 
 	FWGenChunkMap*           pChunkMap;
+
+
+	int32                    iGeneratedSeed;
+
+
+	bool                     bWorldCreated;
 };
 
 
@@ -160,27 +166,48 @@ private:
 // --------------------------------------------------------------------------------------------------------
 
 
-enum EConnectionSide { CS_NONE, CS_LEFT, CS_RIGHT, CS_TOP, CS_BOTTOM };
-
-
 
 class FWGenChunk
 {
 public:
-	FWGenChunk(EConnectionSide eConnectionSide, UProceduralMeshComponent* pMeshComponent)
+	FWGenChunk(UProceduralMeshComponent* pMeshComponent, long long iX, long long iY)
 	{
-		this->eConnectionSide = eConnectionSide;
-		this->pMeshComponent = pMeshComponent;
+		this->pMeshComponent  = pMeshComponent;
+
+		this->iX = iX;
+		this->iY = iY;
+	}
+
+	void clearChunk()
+	{
+		vVertices     .Empty();
+		vTriangles    .Empty();
+		vNormals      .Empty();
+		vUV0          .Empty();
+		vVertexColors .Empty();
+		vTangents     .Empty();
+
+		pMeshComponent->ClearAllMeshSections();
+	}
+
+	int32 getX() const
+	{
+		return iX;
+	}
+
+	int32 getY() const
+	{
+		return iY;
 	}
 
 	~FWGenChunk()
 	{
-		pMeshComponent = nullptr;
+		pMeshComponent->DestroyComponent();
 	}
 
 
 	UPROPERTY()
-		UProceduralMeshComponent* pMeshComponent;
+	UProceduralMeshComponent* pMeshComponent;
 
 
 	TArray<FProcMeshTangent>  vTangents;
@@ -192,7 +219,9 @@ public:
 
 private:
 
-	EConnectionSide           eConnectionSide;
+
+	long long                 iX;
+	long long                 iY;
 };
 
 
@@ -204,11 +233,15 @@ private:
 class FWGenChunkMap
 {
 public:
-	FWGenChunkMap(FWGenChunk* pCentralChunk, int32 ViewDistance)
+	FWGenChunkMap(int32 ViewDistance, int32 WorldSize)
 	{
 		this->ViewDistance = ViewDistance;
+		this->WorldSize    = WorldSize;
+	}
 
-		vChunks.push_back(pCentralChunk);
+	void addChunk(FWGenChunk* pChunk)
+	{
+		vChunks.push_back(pChunk);
 	}
 
 	FWGenChunk* getLastChunk() const
@@ -232,6 +265,8 @@ private:
 	// ViewDistance == 3  ---  Always loaded chunks: 7x7.
 	// ViewDistance == 4  ---  Always loaded chunks: 9x9.
 	// ... (The player is always in the central chunk) ...
+
+	int32 WorldSize;
 
 
 	std::vector<FWGenChunk*> vChunks;

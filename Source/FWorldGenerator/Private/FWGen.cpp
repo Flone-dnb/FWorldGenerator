@@ -18,8 +18,6 @@
 
 #include "Components/StaticMeshComponent.h"
 
-
-
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------
@@ -29,8 +27,14 @@
 AFWGen::AFWGen()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bWorldCreated                 = false;
 
-	pChunkMap = nullptr;
+
+	iGeneratedSeed                = 0;
+
+
+	pChunkMap                     = nullptr;
+
 
 
 
@@ -38,10 +42,6 @@ AFWGen::AFWGen()
 
 	pRootNode = CreateDefaultSubobject<USceneComponent>("Root");
 	RootComponent = pRootNode;
-
-	//UProceduralMeshComponent* pCentralMeshComponent = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("ProceduralMesh"));
-	//pCentralMeshComponent->SetupAttachment(RootComponent);
-	//pCentralMeshComponent->bUseAsyncCooking = true;
 
 
 
@@ -66,8 +66,6 @@ AFWGen::AFWGen()
 
 
 
-
-
 	// Preview Plane
 
 #if WITH_EDITOR
@@ -86,21 +84,60 @@ AFWGen::~AFWGen()
 	if (pChunkMap) delete pChunkMap;
 }
 
-bool AFWGen::GenerateWorld()
+void AFWGen::GenerateWorld()
 {
-	if (pChunkMap == nullptr)
+	if (pChunkMap)
 	{
-		UProceduralMeshComponent* pMeshComponent = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("ProceduralMesh"));
-		pMeshComponent->bUseAsyncCooking = true;
-
-		pChunkMap = new FWGenChunkMap(new FWGenChunk(EConnectionSide::CS_NONE, pMeshComponent), ViewDistance);
+		delete pChunkMap;
+		pChunkMap = nullptr;
 	}
+	
+	// Create the map
+
+	pChunkMap = new FWGenChunkMap(ViewDistance, WorldSize);
 
 
 
+	generateSeed();
+
+	if (WorldSize != -1)
+	{
+		// Generate the chunks.
+
+		for (long long x = -ViewDistance; x < ViewDistance + 1; x++)
+		{
+			for (long long y = -ViewDistance; y < ViewDistance + 1; y++)
+			{
+				UProceduralMeshComponent* pMeshComponent = NewObject<UProceduralMeshComponent>(
+					this, UProceduralMeshComponent::StaticClass(), MakeUniqueObjectName(this, UProceduralMeshComponent::StaticClass(), "ProcChunk"));
+
+				pMeshComponent->bUseAsyncCooking = true;
+				pMeshComponent->RegisterComponent();
+				pMeshComponent->AttachToComponent(RootComponent, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
 
 
-	generateChunk(pChunkMap->getLastChunk());
+
+				pChunkMap->addChunk(new FWGenChunk(pMeshComponent, x, y));
+
+				generateChunk(pChunkMap->getLastChunk());
+			}
+		}
+	}
+	else
+	{
+		UProceduralMeshComponent* pMeshComponent = NewObject<UProceduralMeshComponent>(
+			this, UProceduralMeshComponent::StaticClass(), MakeUniqueObjectName(this, UProceduralMeshComponent::StaticClass(), "ProcChunk"));
+
+		pMeshComponent->bUseAsyncCooking = true;
+		pMeshComponent->RegisterComponent();
+		pMeshComponent->AttachToComponent(RootComponent, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
+
+
+
+		pChunkMap->addChunk(new FWGenChunk(pMeshComponent, 0, 0));
+
+		generateChunk(pChunkMap->getLastChunk());
+	}
 
 
 
@@ -123,9 +160,6 @@ bool AFWGen::GenerateWorld()
 	{
 		WaterPlane->SetMaterial(0, WaterMaterial);
 	}
-
-
-	return false;
 }
 
 #if WITH_EDITOR
@@ -137,24 +171,15 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 
 	if (
 		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ChunkPieceRowCount)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ChunkPieceColumnCount)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ChunkPieceSizeX)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ChunkPieceSizeY)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GenerationFrequency)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GenerationOctaves)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GenerationSeed)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GenerationMaxZFromActorZ)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ComplexPreview)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, InvertWorld)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ChunkPieceColumnCount)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ChunkPieceSizeX)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ChunkPieceSizeY)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GenerationFrequency)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GenerationOctaves)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GenerationSeed)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GenerationMaxZFromActorZ)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ComplexPreview)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, InvertWorld)
 		)
 	{
 		if (ChunkPieceRowCount < 1)
@@ -167,14 +192,14 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 			ChunkPieceColumnCount = 1;
 		}
 
-		if (GenerationMaxZFromActorZ < GetActorLocation().Z)
+		if (GenerationMaxZFromActorZ < 0.0f)
 		{
-			GenerationMaxZFromActorZ = GetActorLocation().Z + 5.0f;
+			GenerationMaxZFromActorZ = 0.0f;
 		}
 
-		if (GenerationSeed < 0.0f)
+		if (GenerationSeed < 0)
 		{
-			GenerationSeed = 0.0f;
+			GenerationSeed = 0;
 		}
 
 		if (GenerationFrequency > 64.0f)
@@ -196,30 +221,20 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 		}
 
 		refreshPreview();
-		if (ComplexPreview) GenerateWorld();
-		else
+
+		if (pChunkMap)
 		{
-			if (pChunkMap)
-			{
-				FWGenChunk* pLastChunk = pChunkMap->getLastChunk();
-
-				pLastChunk->vVertices.Empty();
-				pLastChunk->vTriangles.Empty();
-
-				pLastChunk->pMeshComponent->ClearAllMeshSections();
-			}
+			delete pChunkMap;
+			pChunkMap = nullptr;
 		}
+
+		if (ComplexPreview) GenerateWorld();
 	}
-	else if (
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, CreateWater)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ZWaterLevelInWorld)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WaterSize)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WaterMaterial)
-		||
-		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GroundMaterial) )
+	else if ( MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, CreateWater) 
+			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ZWaterLevelInWorld)
+			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WaterSize)
+			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WaterMaterial)
+			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GroundMaterial) )
 	{
 		if (ZWaterLevelInWorld < 0.0f)
 		{
@@ -262,43 +277,69 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 			WaterPlane->SetVisibility(false);
 		}
 	}
-	else if (MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ViewDistance))
-	{
-		if (ViewDistance < 1)
-		{
-			ViewDistance = 1;
-		}
-		else
-		{
-			delete pChunkMap;
-			pChunkMap = nullptr;
-
-			if (ComplexPreview) GenerateWorld();
-		}
-	}
-	else if (MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WorldSize))
+	else if ((MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ViewDistance))
+			||
+			(MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WorldSize)))
 	{
 		if (WorldSize < -1)
 		{
 			WorldSize = -1;
 		}
+
+		if (ViewDistance < 1)
+		{
+			ViewDistance = 1;
+		}
+
+		if (pChunkMap)
+		{
+			delete pChunkMap;
+			pChunkMap = nullptr;
+		}
+
+		refreshPreview();
+
+		if (ComplexPreview) GenerateWorld();
 	}
+	else
+	{
+		refreshPreview();
+
+		if (pChunkMap)
+		{
+			delete pChunkMap;
+			pChunkMap = nullptr;
+		}
+
+		if (ComplexPreview) GenerateWorld();
+	}
+}
+void AFWGen::PostEditMove(bool bFinished)
+{
+	Super::PostEditMove(bFinished);
+
+	refreshPreview();
+
+	if (pChunkMap)
+	{
+		delete pChunkMap;
+		pChunkMap = nullptr;
+	}
+
+	if (ComplexPreview) GenerateWorld();
 }
 #endif // WITH_EDITOR
 
 void AFWGen::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
-void AFWGen::generateChunk(FWGenChunk* pChunk)
+void AFWGen::generateSeed()
 {
-	// Generation setup
-
 	uint32_t seed = 0;
 
-	if ( GenerationSeed <= 0.0f )
+	if (GenerationSeed == 0)
 	{
 		// Generate seed
 		std::mt19937_64 gen(std::random_device{}());
@@ -311,6 +352,15 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 		seed = GenerationSeed;
 	}
 
+	iGeneratedSeed = seed;
+}
+
+void AFWGen::generateChunk(FWGenChunk* pChunk)
+{
+	// Generation setup
+
+	uint32_t seed = iGeneratedSeed;
+
 
 
 	// We ++ here because we start to make polygons from 2nd row
@@ -320,13 +370,12 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 
 
 	// Clear old data
-	FWGenChunk* pLastChunk = pChunkMap->getLastChunk();
-	pLastChunk->vVertices     .Empty();
-	pLastChunk->vTriangles    .Empty();
-	pLastChunk->vNormals      .Empty();
-	pLastChunk->vUV0          .Empty();
-	pLastChunk->vVertexColors .Empty();
-	pLastChunk->vTangents     .Empty();
+	pChunk->vVertices     .Empty();
+	pChunk->vTriangles    .Empty();
+	pChunk->vNormals      .Empty();
+	pChunk->vUV0          .Empty();
+	pChunk->vVertexColors .Empty();
+	pChunk->vTangents     .Empty();
 
 
 
@@ -340,10 +389,32 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 
 
 
+	// Prepare chunk coordinates
+
+	float fChunkX = GetActorLocation().X;
+	float fChunkY = GetActorLocation().Y;
+
+	if (pChunk->getX() != 0)
+	{
+		// Left or right chunk
+
+		fChunkX += (pChunk->getX() * ChunkPieceColumnCount * ChunkPieceSizeX);
+	}
+	
+	if (pChunk->getY() != 0)
+	{
+		// Top or bottom chunk
+
+		fChunkY += (pChunk->getY() * ChunkPieceRowCount * ChunkPieceSizeY);
+	}
+
+
+
+
 	// Generation params
 
-	float fStartX = GetActorLocation().X - ((iCorrectedColumnCount - 1) * ChunkPieceSizeX) / 2;
-	float fStartY = GetActorLocation().Y - ((iCorrectedRowCount    - 1) * ChunkPieceSizeY) / 2;
+	float fStartX = fChunkX - ((iCorrectedColumnCount - 1) * ChunkPieceSizeX) / 2;
+	float fStartY = fChunkY - ((iCorrectedRowCount    - 1) * ChunkPieceSizeY) / 2;
 
 	FVector vPrevLocation(fStartX, fStartY, GetActorLocation().Z);
 
@@ -379,12 +450,12 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 			vPrevLocation.Z = GetActorLocation().Z + (fInterval * generatedValue);
 
 
-			pLastChunk->vVertices .Add (vPrevLocation);
+			pChunk->vVertices .Add (vPrevLocation);
 
-			pLastChunk->vNormals      .Add(FVector(0, 0, 1.0f));
-			pLastChunk->vUV0          .Add(FVector2D(i, j));
-			pLastChunk->vVertexColors .Add(FLinearColor(0.0f, 0.75, 0.0f, 1.0));
-			pLastChunk->vTangents     .Add(FProcMeshTangent(0.0f, 1.0f, 0.0f));
+			pChunk->vNormals      .Add(FVector(0, 0, 1.0f));
+			pChunk->vUV0          .Add(FVector2D(i, j));
+			pChunk->vVertexColors .Add(FLinearColor(0.0f, 0.75, 0.0f, 1.0));
+			pChunk->vTangents     .Add(FProcMeshTangent(0.0f, 1.0f, 0.0f));
 
 			vPrevLocation.X += ChunkPieceSizeX;
 
@@ -402,23 +473,23 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 				if (j == 0)
 				{
 					// Add triangle #1
-					pLastChunk->vTriangles.Add(iFirstIndexInRow + j);
-					pLastChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
-					pLastChunk->vTriangles.Add(iFirstIndexInRow + j + 1);
+					pChunk->vTriangles.Add(iFirstIndexInRow + j);
+					pChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
+					pChunk->vTriangles.Add(iFirstIndexInRow + j + 1);
 				}
 				else
 				{
 					// Add triangle #2
-					pLastChunk->vTriangles.Add(iFirstIndexInRow + j);
-					pLastChunk->vTriangles.Add(i * iCorrectedColumnCount + j - 1);
-					pLastChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
+					pChunk->vTriangles.Add(iFirstIndexInRow + j);
+					pChunk->vTriangles.Add(i * iCorrectedColumnCount + j - 1);
+					pChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
 
 					if (j < (iCorrectedColumnCount - 1))
 					{
 						// Add triangle #1
-						pLastChunk->vTriangles.Add(iFirstIndexInRow + j);
-						pLastChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
-						pLastChunk->vTriangles.Add(iFirstIndexInRow + j + 1);
+						pChunk->vTriangles.Add(iFirstIndexInRow + j);
+						pChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
+						pChunk->vTriangles.Add(iFirstIndexInRow + j + 1);
 					}
 				}
 			}
@@ -428,33 +499,54 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 	}
 
 
-	pLastChunk->pMeshComponent->ClearAllMeshSections();
+	pChunk->pMeshComponent->ClearAllMeshSections();
 
 	// pMeshComponent ->CreateMeshSection (0, vVertices, vTriangles, Bounds, true, EUpdateFrequency::Infrequent);
-	pLastChunk->pMeshComponent->CreateMeshSection_LinearColor(0, pLastChunk->vVertices, pLastChunk->vTriangles, pLastChunk->vNormals,
-		pLastChunk->vUV0, pLastChunk->vVertexColors, pLastChunk->vTangents, true);
+	pChunk->pMeshComponent->CreateMeshSection_LinearColor(0, pChunk->vVertices, pChunk->vTriangles, pChunk->vNormals,
+		pChunk->vUV0, pChunk->vVertexColors, pChunk->vTangents, true);
 
 	// Enable collision data
-	pLastChunk->pMeshComponent->ContainsPhysicsTriMeshData(true);
+	pChunk->pMeshComponent->ContainsPhysicsTriMeshData(true);
 
 	// Set material
 	if (GroundMaterial)
 	{
-		pLastChunk->pMeshComponent->SetMaterial(0, GroundMaterial);
+		pChunk->pMeshComponent->SetMaterial(0, GroundMaterial);
 	}
 }
 
 #if WITH_EDITOR
 void AFWGen::refreshPreview()
 {
-	PreviewPlane ->SetBoxExtent ( FVector (
-		((ChunkPieceColumnCount) * ChunkPieceSizeX) / 2,
-		((ChunkPieceRowCount) * ChunkPieceSizeY) / 2,
-		GenerationMaxZFromActorZ / 2
-	)
-	);
+	if (WorldSize == -1)
+	{
+		PreviewPlane ->SetBoxExtent ( FVector (
+			(ChunkPieceColumnCount * ChunkPieceSizeX / 2),
+			(ChunkPieceRowCount * ChunkPieceSizeY / 2),
+			GenerationMaxZFromActorZ / 2
+		)
+		);
+	}
+	else if (WorldSize == 0)
+	{
+		PreviewPlane ->SetBoxExtent ( FVector (
+			(ViewDistance * 2 + 1) * (ChunkPieceColumnCount * ChunkPieceSizeX / 2),
+			(ViewDistance * 2 + 1) * (ChunkPieceRowCount * ChunkPieceSizeY / 2),
+			GenerationMaxZFromActorZ / 2
+		)
+		);
+	}
+	else
+	{
+		PreviewPlane ->SetBoxExtent ( FVector (
+			((WorldSize * ViewDistance) * 2 + 1) * (ChunkPieceColumnCount * ChunkPieceSizeX / 2),
+			((WorldSize * ViewDistance) * 2 + 1) * (ChunkPieceRowCount * ChunkPieceSizeY / 2),
+			GenerationMaxZFromActorZ / 2
+		)
+		);
+	}
 
-	PreviewPlane ->SetRelativeLocation ( FVector (
+	PreviewPlane ->SetWorldLocation ( FVector (
 		GetActorLocation () .X,
 		GetActorLocation () .Y,
 		GetActorLocation () .Z + (GenerationMaxZFromActorZ) / 2
