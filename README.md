@@ -14,7 +14,7 @@ You can configure the generator's parameters in the details tab.<br>
     <li><b>Chunk Piece Column Count</b> - determines how much there is gonna be chunk pieces in a column of one chunk. Because one chunk should be considered as a 2D matrix from the top view. You can change the View Mode in the Editor to Wireframe to see how this parameter changes the chunk.</li>
     <li><b>Chunk Piece Size X</b> - determines the size of one chunk piece by the x-axis.</li>
     <li><b>Chunk Piece Size Y</b> - determines the size of one chunk piece by the y-axis.</li>
-    <li><b>View Distance</b> - determines how much chunks will be always loaded. For example: ViewDistance == 1  ---  Always loaded chunks: 3x3, ViewDistance == 2  ---  Always loaded chunks: 5x5. The player is always in the central chunk.</li>
+    <li><b>View Distance</b> - determines how much chunks will be always loaded. For example: ViewDistance == 1  ---  Always loaded chunks: 3x3, ViewDistance == 2  ---  Always loaded chunks: 5x5. And so on... The player is always in the central chunk.</li>
 </ul>
 
 <h3>Generation</h3>
@@ -28,7 +28,7 @@ You can configure the generator's parameters in the details tab.<br>
 
 <h3>World</h3>
 <ul>
-    <li><b>World Size</b> - when set to 0 the world will be infinite, when set to -1 the world will be 1 chunk size, when set to 1 the world will be 1 ViewDistance size, when set to 2 the world will be 2 ViewDistance sizes (for example if ViewDistance is 1, then the world will be 5x5).</li>
+    <li><b>World Size</b> - when set to 0 the world will be infinite, when set to -1 the world will be 1 chunk size, when set to 1 the world will be 1 ViewDistance size, when set to 2 the world will be 2 ViewDistance sizes (for example if ViewDistance is 1, then the world will be 5x5). And so on...</li>
 </ul>
 
 <h3>Ground</h3>
@@ -54,6 +54,5 @@ You can configure the generator's parameters in the details tab.<br>
     <li>To access the plugin in the C++ code: In your project's .Build.cs file you must add "FWorldGenerator" to PublicDependencyModuleNames. Recompile. And now you can include "FWGen.h".</li>
 </ol>
 
-To use the generator just place an object of the <b>FWGen</b> class (search in the Modes tab in UE) in your level and configure its details. Don't forget to enable Complex Preview if you want to see how it look.<br><br>
-
+To use the generator just place an object of the <b>FWGen</b> class (search in the Modes tab in UE) in your level and configure its details. Don't forget to enable Complex Preview if you want to see how it look.<br>
 To generate the world in the runtime you need to call the <b>GenerateWorld()</b> function from this object.
