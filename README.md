@@ -5,7 +5,7 @@ You can configure the generator's parameters in the details tab.<br>
 
 <h3>Preview</h3>
 <ul>
-    <li><b>Complex Preview</b> - generates one part of the world (every time a parameter is changed) as an example of how it's gonna look.</li>
+    <li><b>Complex Preview</b> - generates one part of the world (every time a parameter is changed) as an example of how it's gonna look. Please, disable Complex Preview if you're gonna test world generation in-game. And use this only to quickly check how it all looks.</li>
 </ul>
 
 <h3>Chunks</h3>
@@ -54,8 +54,6 @@ You can configure the generator's parameters in the details tab.<br>
     <li>To access the plugin in the C++ code: In your project's .Build.cs file you must add "FWorldGenerator" to PublicDependencyModuleNames. Recompile. And now you can include "FWGen.h".</li>
 </ol>
 
-To use the generator just place an object of the <b>FWGen</b> class (search in the Modes tab in UE) in your level and configure its details.<br><br>
-
-P.S. If you've added the FWGen object to the level and you can see it in the World Outliner but not on the screen then you should probably look up because the spawn point of this actor is the bottom of the generated world.<br><br>
+To use the generator just place an object of the <b>FWGen</b> class (search in the Modes tab in UE) in your level and configure its details. Don't forget to enable Complex Preview if you want to see how it look.<br><br>
 
 To generate the world in the runtime you need to call the <b>GenerateWorld()</b> function from this object.
