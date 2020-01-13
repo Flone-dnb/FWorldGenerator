@@ -454,8 +454,23 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 
 			pChunk->vNormals      .Add(FVector(0, 0, 1.0f));
 			pChunk->vUV0          .Add(FVector2D(i, j));
-			pChunk->vVertexColors .Add(FLinearColor(0.0f, 0.75, 0.0f, 1.0));
 			pChunk->vTangents     .Add(FProcMeshTangent(0.0f, 1.0f, 0.0f));
+
+			// Set alpha color
+
+			float fAlphaColor = 0.0f;
+
+			if ((generatedValue >= FirstMaterialMaxRelativeHeight) && (generatedValue <= SecondMaterialMaxRelativeHeight))
+			{
+				fAlphaColor = 0.5f;
+			}
+			else if (generatedValue >= SecondMaterialMaxRelativeHeight)
+			{
+				fAlphaColor = 1.0f;
+			}
+
+			pChunk->vVertexColors .Add(FLinearColor(0.0f, 0.75, 0.0f, fAlphaColor));
+
 
 			vPrevLocation.X += ChunkPieceSizeX;
 

@@ -74,7 +74,7 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		float GenerationFrequency = 0.7f;
+		float GenerationFrequency = 0.65f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
 		int32 GenerationOctaves = 7;
@@ -83,7 +83,7 @@ public:
 		int32 GenerationSeed = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		int32 GenerationMaxZFromActorZ = 15000.0f;
+		int32 GenerationMaxZFromActorZ = 25000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
 		bool  InvertWorld = false;
@@ -104,6 +104,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
 		UMaterialInterface* GroundMaterial;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
+		float FirstMaterialMaxRelativeHeight = 0.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
+		float SecondMaterialMaxRelativeHeight = 0.75f;
 
 
 
