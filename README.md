@@ -34,6 +34,8 @@ You can configure the generator's parameters in the details tab.<br>
 <h3>Ground</h3>
 <ul>
     <li><b>Ground Material</b> - determines the material which the terrain will have.</li>
+    <li><b>First Material Max Relative Height</b> - Ground Material must consist out of 3 materials (layers), for example, it can contain: grass, rock, and snow (3 layers). This parameter determines the maximum relative height (from the actor's Z coordinate to the Generation Max Z From Actor Z) in the range from 0.0 to 1.0, on which terrain will contain the first layer (grass for example). See Terrain Material below on how to set this material. Note, that terrain which is higher than the second material height will have a 3rd layer of material (snow for example).</li>
+    <li><b>Second Material Max Relative Heightl</b> - Ground Material must consist out of 3 materials (layers), for example, it can contain: grass, rock, and snow (3 layers). This parameter determines the maximum relative height (from the actor's Z coordinate to the Generation Max Z From Actor Z) in the range from 0.0 to 1.0, on which terrain will contain the second layer (rock for example). See Terrain Material below on how to set this material. Note, that terrain which is higher than the second material height will have a 3rd layer of material (snow for example).</li>
 </ul>
 
 <h3>Water</h3>
@@ -43,6 +45,16 @@ You can configure the generator's parameters in the details tab.<br>
     <li><b>Water Size</b> - determines the size of the water in chunks.</li>
     <li><b>Water Material</b> - determines the material which the water will have.</li>
 </ul>
+
+# Terrain Material
+
+To set up Ground Material correctly use can just add your material but it's just gonna cover all the terrain. If you want your materials to change depending on the terrain height, for example, if you want to have grass on low terrain height and snow on the high terrain height then you should create the material which is similar to the one below:
+<p align="center">
+  <img width="650" height="400" src="pics/Example Ground Material.jpg">
+</p>
+Let's guess you have a material of grass, you have base color, metallic, specular, etc. You can just create simple material with the Lerp_3Color node and add the Vertex Color node. Then copy-paste your material into this new simple material and connect your base color output to one of then Lerp_3Color inputs. Then you can copy-paste the Lerp and Vertex Color nodes and connect them to the Normal input of the material, for example.<br>
+<br>
+If you want your terrain to have only one material then you can just connect your textures to every input of the Lerp node.
 
 # How to use it
 <ol>
