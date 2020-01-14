@@ -53,6 +53,9 @@ public:
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
 		bool  ComplexPreview = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
+		bool  WaterPreview = false;
 #endif // WITH_EDITOR
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")

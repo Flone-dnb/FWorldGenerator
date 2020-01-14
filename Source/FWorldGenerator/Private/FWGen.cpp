@@ -164,6 +164,26 @@ void AFWGen::GenerateWorld()
 	{
 		WaterPlane->SetMaterial(0, WaterMaterial);
 	}
+
+	if (CreateWater)
+	{
+#if WITH_EDITOR
+		if (WaterPreview)
+		{
+			WaterPlane->SetVisibility(true);
+		}
+		else
+		{
+			WaterPlane->SetVisibility(false);
+		}
+#else
+		WaterPlane->SetVisibility(true);
+#endif // WITH_EDITOR
+	}
+	else
+	{
+		WaterPlane->SetVisibility(false);
+	}
 }
 
 #if WITH_EDITOR
@@ -226,13 +246,21 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 
 		refreshPreview();
 
-		if (ComplexPreview) GenerateWorld();
+		if (ComplexPreview)
+		{
+			GenerateWorld();
+		}
+		else
+		{
+			pChunkMap->clearWorld(pProcMeshComponent);
+		}
 	}
 	else if ( MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, CreateWater) 
 			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ZWaterLevelInWorld)
 			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WaterSize)
 			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WaterMaterial)
-			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GroundMaterial) )
+			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GroundMaterial)
+			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WaterPreview))
 	{
 		if (ZWaterLevelInWorld < 0.0f)
 		{
@@ -255,7 +283,14 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 				WaterPlane->SetMaterial(0, WaterMaterial);
 			}
 
-			WaterPlane->SetVisibility(true);
+			if (WaterPreview)
+			{
+				WaterPlane->SetVisibility(true);
+			}
+			else
+			{
+				WaterPlane->SetVisibility(false);
+			}
 
 			WaterPlane->SetWorldLocation(FVector(
 				GetActorLocation().X,
