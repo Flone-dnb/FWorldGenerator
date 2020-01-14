@@ -43,6 +43,18 @@ AFWGen::AFWGen()
 	pRootNode = CreateDefaultSubobject<USceneComponent>("Root");
 	RootComponent = pRootNode;
 
+	pProcMeshComponent = CreateDefaultSubobject<UProceduralMeshComponent>("ProcMeshComp");
+	pProcMeshComponent->bUseAsyncCooking = true;
+	pProcMeshComponent->RegisterComponent();
+	pProcMeshComponent->SetupAttachment(RootComponent);
+
+	// Enable collision
+	pProcMeshComponent->ContainsPhysicsTriMeshData(true);
+
+
+
+	pChunkMap = new FWGenChunkMap();
+
 
 
 
@@ -81,20 +93,30 @@ AFWGen::AFWGen()
 
 AFWGen::~AFWGen()
 {
-	if (pChunkMap) delete pChunkMap;
+	if (pChunkMap)
+	{
+		delete pChunkMap;
+	}
+
+	if (!pProcMeshComponent->IsValidLowLevel())
+	{
+		return;
+	}
+
+	if (pProcMeshComponent->IsPendingKill())
+	{
+		return;
+	}
+
+	pProcMeshComponent->DestroyComponent();
 }
 
 void AFWGen::GenerateWorld()
 {
 	if (pChunkMap)
 	{
-		delete pChunkMap;
-		pChunkMap = nullptr;
+		pChunkMap->clearWorld(pProcMeshComponent);
 	}
-	
-	// Create the map
-
-	pChunkMap = new FWGenChunkMap(ViewDistance, WorldSize);
 
 
 
@@ -104,39 +126,21 @@ void AFWGen::GenerateWorld()
 	{
 		// Generate the chunks.
 
+		int32 iSectionIndex = 0;
+
 		for (long long x = -ViewDistance; x < ViewDistance + 1; x++)
 		{
 			for (long long y = -ViewDistance; y < ViewDistance + 1; y++)
 			{
-				UProceduralMeshComponent* pMeshComponent = NewObject<UProceduralMeshComponent>(
-					this, UProceduralMeshComponent::StaticClass(), MakeUniqueObjectName(this, UProceduralMeshComponent::StaticClass(), "ProcChunk"));
+				pChunkMap->addChunk(generateChunk(x, y, iSectionIndex));
 
-				pMeshComponent->bUseAsyncCooking = true;
-				pMeshComponent->RegisterComponent();
-				pMeshComponent->AttachToComponent(RootComponent, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
-
-
-
-				pChunkMap->addChunk(new FWGenChunk(pMeshComponent, x, y));
-
-				generateChunk(pChunkMap->getLastChunk());
+				iSectionIndex++;
 			}
 		}
 	}
 	else
 	{
-		UProceduralMeshComponent* pMeshComponent = NewObject<UProceduralMeshComponent>(
-			this, UProceduralMeshComponent::StaticClass(), MakeUniqueObjectName(this, UProceduralMeshComponent::StaticClass(), "ProcChunk"));
-
-		pMeshComponent->bUseAsyncCooking = true;
-		pMeshComponent->RegisterComponent();
-		pMeshComponent->AttachToComponent(RootComponent, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
-
-
-
-		pChunkMap->addChunk(new FWGenChunk(pMeshComponent, 0, 0));
-
-		generateChunk(pChunkMap->getLastChunk());
+		pChunkMap->addChunk(generateChunk(0, 0, 0));
 	}
 
 
@@ -222,12 +226,6 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 
 		refreshPreview();
 
-		if (pChunkMap)
-		{
-			delete pChunkMap;
-			pChunkMap = nullptr;
-		}
-
 		if (ComplexPreview) GenerateWorld();
 	}
 	else if ( MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, CreateWater) 
@@ -245,15 +243,13 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 			ZWaterLevelInWorld = 1.0f;
 		}
 
+		if (GroundMaterial)
+		{
+			pProcMeshComponent->SetMaterial(0, GroundMaterial);
+		}
+
 		if (CreateWater)
 		{
-			if (GroundMaterial && pChunkMap)
-			{
-				FWGenChunk* pLastChunk = pChunkMap->getLastChunk();
-
-				pLastChunk->pMeshComponent->SetMaterial(0, GroundMaterial);
-			}
-
 			if (WaterMaterial)
 			{
 				WaterPlane->SetMaterial(0, WaterMaterial);
@@ -291,12 +287,6 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 			ViewDistance = 1;
 		}
 
-		if (pChunkMap)
-		{
-			delete pChunkMap;
-			pChunkMap = nullptr;
-		}
-
 		refreshPreview();
 
 		if (ComplexPreview) GenerateWorld();
@@ -305,26 +295,17 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 	{
 		refreshPreview();
 
-		if (pChunkMap)
-		{
-			delete pChunkMap;
-			pChunkMap = nullptr;
-		}
-
 		if (ComplexPreview) GenerateWorld();
 	}
 }
+#endif // WITH_EDITOR
+
+#if WITH_EDITOR
 void AFWGen::PostEditMove(bool bFinished)
 {
 	Super::PostEditMove(bFinished);
 
 	refreshPreview();
-
-	if (pChunkMap)
-	{
-		delete pChunkMap;
-		pChunkMap = nullptr;
-	}
 
 	if (ComplexPreview) GenerateWorld();
 }
@@ -355,7 +336,7 @@ void AFWGen::generateSeed()
 	iGeneratedSeed = seed;
 }
 
-void AFWGen::generateChunk(FWGenChunk* pChunk)
+FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex)
 {
 	// Generation setup
 
@@ -366,16 +347,6 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 	// We ++ here because we start to make polygons from 2nd row
 	int32 iCorrectedRowCount = ChunkPieceRowCount + 1;
 	int32 iCorrectedColumnCount = ChunkPieceColumnCount + 1;
-
-
-
-	// Clear old data
-	pChunk->vVertices     .Empty();
-	pChunk->vTriangles    .Empty();
-	pChunk->vNormals      .Empty();
-	pChunk->vUV0          .Empty();
-	pChunk->vVertexColors .Empty();
-	pChunk->vTangents     .Empty();
 
 
 
@@ -394,18 +365,18 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 	float fChunkX = GetActorLocation().X;
 	float fChunkY = GetActorLocation().Y;
 
-	if (pChunk->getX() != 0)
+	if (iX != 0)
 	{
 		// Left or right chunk
 
-		fChunkX += (pChunk->getX() * ChunkPieceColumnCount * ChunkPieceSizeX);
+		fChunkX += (iX * ChunkPieceColumnCount * ChunkPieceSizeX);
 	}
 	
-	if (pChunk->getY() != 0)
+	if (iY != 0)
 	{
 		// Top or bottom chunk
 
-		fChunkY += (pChunk->getY() * ChunkPieceRowCount * ChunkPieceSizeY);
+		fChunkY += (iY * ChunkPieceRowCount * ChunkPieceSizeY);
 	}
 
 
@@ -419,6 +390,13 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 	FVector vPrevLocation(fStartX, fStartY, GetActorLocation().Z);
 
 	float fInterval = GenerationMaxZFromActorZ - GetActorLocation().Z;
+
+
+
+
+	// Create chunk
+
+	FWGenChunk* pNewChunk = new FWGenChunk(iX, iY, iSectionIndex);
 
 
 
@@ -450,11 +428,11 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 			vPrevLocation.Z = GetActorLocation().Z + (fInterval * generatedValue);
 
 
-			pChunk->vVertices .Add (vPrevLocation);
+			pNewChunk->vVertices .Add (vPrevLocation);
 
-			pChunk->vNormals      .Add(FVector(0, 0, 1.0f));
-			pChunk->vUV0          .Add(FVector2D(i, j));
-			pChunk->vTangents     .Add(FProcMeshTangent(0.0f, 1.0f, 0.0f));
+			pNewChunk->vNormals      .Add(FVector(0, 0, 1.0f));
+			pNewChunk->vUV0          .Add(FVector2D(i, j));
+			pNewChunk->vTangents     .Add(FProcMeshTangent(0.0f, 1.0f, 0.0f));
 
 			// Set alpha color
 
@@ -469,7 +447,7 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 				fAlphaColor = 1.0f;
 			}
 
-			pChunk->vVertexColors .Add(FLinearColor(0.0f, 0.75, 0.0f, fAlphaColor));
+			pNewChunk->vVertexColors .Add(FLinearColor(0.0f, 0.75, 0.0f, fAlphaColor));
 
 
 			vPrevLocation.X += ChunkPieceSizeX;
@@ -488,23 +466,23 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 				if (j == 0)
 				{
 					// Add triangle #1
-					pChunk->vTriangles.Add(iFirstIndexInRow + j);
-					pChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
-					pChunk->vTriangles.Add(iFirstIndexInRow + j + 1);
+					pNewChunk->vTriangles.Add(iFirstIndexInRow + j);
+					pNewChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
+					pNewChunk->vTriangles.Add(iFirstIndexInRow + j + 1);
 				}
 				else
 				{
 					// Add triangle #2
-					pChunk->vTriangles.Add(iFirstIndexInRow + j);
-					pChunk->vTriangles.Add(i * iCorrectedColumnCount + j - 1);
-					pChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
+					pNewChunk->vTriangles.Add(iFirstIndexInRow + j);
+					pNewChunk->vTriangles.Add(i * iCorrectedColumnCount + j - 1);
+					pNewChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
 
 					if (j < (iCorrectedColumnCount - 1))
 					{
 						// Add triangle #1
-						pChunk->vTriangles.Add(iFirstIndexInRow + j);
-						pChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
-						pChunk->vTriangles.Add(iFirstIndexInRow + j + 1);
+						pNewChunk->vTriangles.Add(iFirstIndexInRow + j);
+						pNewChunk->vTriangles.Add(i * iCorrectedColumnCount + j);
+						pNewChunk->vTriangles.Add(iFirstIndexInRow + j + 1);
 					}
 				}
 			}
@@ -513,21 +491,18 @@ void AFWGen::generateChunk(FWGenChunk* pChunk)
 		vPrevLocation.Set(fStartX, vPrevLocation.Y + ChunkPieceSizeY, GetActorLocation().Z);
 	}
 
-
-	pChunk->pMeshComponent->ClearAllMeshSections();
-
-	// pMeshComponent ->CreateMeshSection (0, vVertices, vTriangles, Bounds, true, EUpdateFrequency::Infrequent);
-	pChunk->pMeshComponent->CreateMeshSection_LinearColor(0, pChunk->vVertices, pChunk->vTriangles, pChunk->vNormals,
-		pChunk->vUV0, pChunk->vVertexColors, pChunk->vTangents, true);
-
-	// Enable collision data
-	pChunk->pMeshComponent->ContainsPhysicsTriMeshData(true);
+	pProcMeshComponent->CreateMeshSection_LinearColor(iSectionIndex, pNewChunk->vVertices, pNewChunk->vTriangles, pNewChunk->vNormals,
+		pNewChunk->vUV0, pNewChunk->vVertexColors, pNewChunk->vTangents, true);
 
 	// Set material
 	if (GroundMaterial)
 	{
-		pChunk->pMeshComponent->SetMaterial(0, GroundMaterial);
+		pProcMeshComponent->SetMaterial(iSectionIndex, GroundMaterial);
 	}
+
+	pNewChunk->setMeshSection(pProcMeshComponent->GetProcMeshSection(iSectionIndex));
+
+	return pNewChunk;
 }
 
 #if WITH_EDITOR

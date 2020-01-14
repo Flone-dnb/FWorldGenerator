@@ -74,7 +74,7 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		float GenerationFrequency = 0.65f;
+		float GenerationFrequency = 0.7f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
 		int32 GenerationOctaves = 7;
@@ -148,21 +148,24 @@ protected:
 
 private:
 
-	void generateChunk(FWGenChunk* pChunk);
+	FWGenChunk* generateChunk(long long iX, long long iY, int32 iSectionIndex);
 	void generateSeed();
 
 #if WITH_EDITOR
 	void refreshPreview();
 #endif // WITH_EDITOR
 
-
-	FWGenChunkMap*           pChunkMap;
-
-
-	int32                    iGeneratedSeed;
+	UPROPERTY()
+	UProceduralMeshComponent* pProcMeshComponent;
 
 
-	bool                     bWorldCreated;
+	FWGenChunkMap*            pChunkMap;
+
+
+	int32                     iGeneratedSeed;
+
+
+	bool                      bWorldCreated;
 };
 
 
@@ -175,12 +178,14 @@ private:
 class FWGenChunk
 {
 public:
-	FWGenChunk(UProceduralMeshComponent* pMeshComponent, long long iX, long long iY)
+	FWGenChunk(long long iX, long long iY, int32 iSectionIndex)
 	{
-		this->pMeshComponent  = pMeshComponent;
+		pMeshSection = nullptr;
 
 		this->iX = iX;
 		this->iY = iY;
+
+		this->iSectionIndex = iSectionIndex;
 	}
 
 	void clearChunk()
@@ -192,7 +197,7 @@ public:
 		vVertexColors .Empty();
 		vTangents     .Empty();
 
-		pMeshComponent->ClearAllMeshSections();
+		pMeshSection->Reset();
 	}
 
 	int32 getX() const
@@ -205,14 +210,14 @@ public:
 		return iY;
 	}
 
-	~FWGenChunk()
+	void setMeshSection(FProcMeshSection* pMeshSection)
 	{
-		pMeshComponent->DestroyComponent();
+		this->pMeshSection  = pMeshSection;
 	}
 
 
 	UPROPERTY()
-	UProceduralMeshComponent* pMeshComponent;
+	FProcMeshSection* pMeshSection;
 
 
 	TArray<FProcMeshTangent>  vTangents;
@@ -227,6 +232,9 @@ private:
 
 	long long                 iX;
 	long long                 iY;
+
+
+	int32                     iSectionIndex;
 };
 
 
@@ -238,15 +246,30 @@ private:
 class FWGenChunkMap
 {
 public:
-	FWGenChunkMap(int32 ViewDistance, int32 WorldSize)
-	{
-		this->ViewDistance = ViewDistance;
-		this->WorldSize    = WorldSize;
-	}
 
 	void addChunk(FWGenChunk* pChunk)
 	{
 		vChunks.push_back(pChunk);
+	}
+
+	void clearChunks()
+	{
+		for (size_t i = 0; i < vChunks.size(); i++)
+		{
+			vChunks[i]->clearChunk();
+		}
+	}
+
+	void clearWorld(UProceduralMeshComponent* pProcMeshComponent)
+	{
+		for (size_t i = 0; i < vChunks.size(); i++)
+		{
+			delete vChunks[i];
+		}
+
+		vChunks.clear();
+
+		pProcMeshComponent->ClearAllMeshSections();
 	}
 
 	FWGenChunk* getLastChunk() const
@@ -270,8 +293,6 @@ private:
 	// ViewDistance == 3  ---  Always loaded chunks: 7x7.
 	// ViewDistance == 4  ---  Always loaded chunks: 9x9.
 	// ... (The player is always in the central chunk) ...
-
-	int32 WorldSize;
 
 
 	std::vector<FWGenChunk*> vChunks;
