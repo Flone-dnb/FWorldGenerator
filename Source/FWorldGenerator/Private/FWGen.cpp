@@ -44,7 +44,7 @@ AFWGen::AFWGen()
 	RootComponent = pRootNode;
 
 	pProcMeshComponent = CreateDefaultSubobject<UProceduralMeshComponent>("ProcMeshComp");
-	pProcMeshComponent->bUseAsyncCooking = true;
+	//pProcMeshComponent->bUseAsyncCooking = true;  // commented because the world should be generated after GenerateWorld() returned, and not calculate something after the function returned.
 	pProcMeshComponent->RegisterComponent();
 	pProcMeshComponent->SetupAttachment(RootComponent);
 
