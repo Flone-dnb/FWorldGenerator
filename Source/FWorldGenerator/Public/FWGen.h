@@ -62,10 +62,10 @@ public:
 		int32 ChunkPieceColumnCount = 100;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		float ChunkPieceSizeX = 500.0f;
+		float ChunkPieceSizeX = 400.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		float ChunkPieceSizeY = 500.0f;
+		float ChunkPieceSizeY = 400.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
 		int32 ViewDistance = 1;
@@ -109,6 +109,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
 		float SecondMaterialMaxRelativeHeight = 0.75f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
+		float MaterialHeightMaxDeviation = 0.025f;
 
 
 

@@ -400,6 +400,10 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 
 
 
+	// Prepare random for vectex color
+
+	std::mt19937_64 rnd(iGeneratedSeed);
+	std::uniform_real_distribution<float> urd(-MaterialHeightMaxDeviation, MaterialHeightMaxDeviation);
 
 	// Generation
 
@@ -434,17 +438,22 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 			pNewChunk->vUV0          .Add(FVector2D(i, j));
 			pNewChunk->vTangents     .Add(FProcMeshTangent(0.0f, 1.0f, 0.0f));
 
-			// Set alpha color
 
-			float fAlphaColor = 0.0f;
 
-			if ((generatedValue >= FirstMaterialMaxRelativeHeight) && (generatedValue <= SecondMaterialMaxRelativeHeight))
+			// Set "material" to vertex
+
+			float fDiviation = urd(rnd);
+
+			float fAlphaColor = 0.0f; // apply first material to the vertex
+
+			if ( (generatedValue >= (FirstMaterialMaxRelativeHeight + fDiviation)) 
+				 && (generatedValue <= (SecondMaterialMaxRelativeHeight + fDiviation)) )
 			{
-				fAlphaColor = 0.5f;
+				fAlphaColor = 0.5f; // apply second material to the vertex
 			}
-			else if (generatedValue >= SecondMaterialMaxRelativeHeight)
+			else if (generatedValue >= (SecondMaterialMaxRelativeHeight + fDiviation))
 			{
-				fAlphaColor = 1.0f;
+				fAlphaColor = 1.0f; // apply third material to the vertex
 			}
 
 			pNewChunk->vVertexColors .Add(FLinearColor(0.0f, 0.75, 0.0f, fAlphaColor));
