@@ -50,7 +50,7 @@ You can configure the generator's parameters in the details tab.<br>
 
 # Terrain Material
 
-To set up Ground Material correctly use can just add your material but it's just gonna cover all the terrain. If you want your materials to change depending on the terrain height, for example, if you want to have grass on low terrain height and snow on the high terrain height then you should create the material which is similar to the one below:
+To set up Ground Material correctly you can just add your material but it's just gonna cover all the terrain. If you want your materials to change depending on the terrain height, for example, if you want to have grass on low terrain height and snow on the high terrain height then you should create the material which is similar to the one below:
 <p align="center">
   <img width="650" height="400" src="pics/Example Ground Material.jpg">
 </p>
