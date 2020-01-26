@@ -111,7 +111,7 @@ public:
 		float FirstMaterialMaxRelativeHeight = 0.5f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
-		float SecondMaterialMaxRelativeHeight = 0.75f;
+		float SecondMaterialMaxRelativeHeight = 0.7f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
 		float MaterialHeightMaxDeviation = 0.025f;
