@@ -40,8 +40,83 @@ public:
 	~AFWGen();
 
 
-	UFUNCTION(BlueprintCallable, Category = "Procedural Generation")
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		void          GenerateWorld();
+
+
+	// "Set" functions
+		
+		// Chunks
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Chunks")
+			bool SetChunkPieceRowCount(int32 NewChunkPieceRowCount);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Chunks")
+			bool SetChunkPieceColumnCount(int32 NewChunkPieceColumnCount);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Chunks")
+			bool SetChunkPieceSizeX(float NewChunkPieceSizeX);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Chunks")
+			bool SetChunkPieceSizeY(float NewChunkPieceSizeY);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Chunks")
+			bool SetViewDistance(int32 NewViewDistance);
+
+
+		// Generation
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Generation")
+			bool SetGenerationFrequency(float NewGenerationFrequency);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Generation")
+			bool SetGenerationOctaves(int32 NewGenerationOctaves);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Generation")
+			bool SetGenerationSeed(int32 NewGenerationSeed);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Generation")
+			bool SetGenerationMaxZFromActorZ(float NewGenerationMaxZFromActorZ);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Generation")
+			void SetInvertWorld(bool InvertWorld);
+
+
+		// World
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | World")
+			bool SetWorldSize(int32 NewWorldSize);
+
+
+		// Ground
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
+			void SetGroundMaterial(UMaterialInterface* NewGroundMaterial);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
+			bool SetFirstMaterialMaxRelativeHeight(float NewFirstMaterialMaxRelativeHeight);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
+			bool SetSecondMaterialMaxRelativeHeight(float NewSecondMaterialMaxRelativeHeight);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
+			bool SetMaterialHeightMaxDeviation(float NewMaterialHeightMaxDeviation);
+
+
+		// Water
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Water")
+			void SetCreateWater(bool CreateWater);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Water")
+			bool SetZWaterLevelInWorld(float NewZWaterLevelInWorld);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Water")
+			bool SetWaterSize(int32 NewWaterSize);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Water")
+			void SetWaterMaterial(UMaterialInterface* NewWaterMaterial);
+
 
 #if WITH_EDITOR
 	virtual void  PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -86,7 +161,7 @@ public:
 		int32 GenerationSeed = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		int32 GenerationMaxZFromActorZ = 25000.0f;
+		float GenerationMaxZFromActorZ = 25000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
 		bool  InvertWorld = false;
@@ -125,10 +200,11 @@ public:
 		float ZWaterLevelInWorld = 0.3f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
-		float WaterSize = 10.0f;
+		int32 WaterSize = 10;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 		UMaterialInterface* WaterMaterial;
+
 
 protected:
 

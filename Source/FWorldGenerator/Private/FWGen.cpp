@@ -335,6 +335,236 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 }
 #endif // WITH_EDITOR
 
+bool AFWGen::SetChunkPieceRowCount(int32 NewChunkPieceRowCount)
+{
+	if (NewChunkPieceRowCount < 1)
+	{
+		return true;
+	}
+	else
+	{
+		ChunkPieceRowCount = NewChunkPieceRowCount;
+
+		return false;
+	}
+}
+
+bool AFWGen::SetChunkPieceColumnCount(int32 NewChunkPieceColumnCount)
+{
+	if (NewChunkPieceColumnCount < 1)
+	{
+		return true;
+	}
+	else
+	{
+		ChunkPieceColumnCount = NewChunkPieceColumnCount;
+
+		return false;
+	}
+}
+
+bool AFWGen::SetChunkPieceSizeX(float NewChunkPieceSizeX)
+{
+	if (NewChunkPieceSizeX < 0.5f)
+	{
+		return true;
+	}
+	else
+	{
+		ChunkPieceSizeX = NewChunkPieceSizeX;
+
+		return false;
+	}
+}
+
+bool AFWGen::SetChunkPieceSizeY(float NewChunkPieceSizeY)
+{
+	if (NewChunkPieceSizeY < 0.5f)
+	{
+		return true;
+	}
+	else
+	{
+		ChunkPieceSizeY = NewChunkPieceSizeY;
+
+		return false;
+	}
+}
+
+bool AFWGen::SetViewDistance(int32 NewViewDistance)
+{
+	if (NewViewDistance < 1)
+	{
+		return true;
+	}
+	else
+	{
+		ViewDistance = NewViewDistance;
+
+		return false;
+	}
+}
+
+bool AFWGen::SetGenerationFrequency(float NewGenerationFrequency)
+{
+	if ((NewGenerationFrequency > 64.0f) || (NewGenerationFrequency < 0.1f))
+	{
+		return true;
+	}
+	else
+	{
+		GenerationFrequency = NewGenerationFrequency;
+
+		return false;
+	}
+}
+
+bool AFWGen::SetGenerationOctaves(int32 NewGenerationOctaves)
+{
+	if ((NewGenerationOctaves > 16) || (NewGenerationOctaves < 1))
+	{
+		return true;
+	}
+	else
+	{
+		GenerationOctaves = NewGenerationOctaves;
+
+		return false;
+	}
+}
+
+bool AFWGen::SetGenerationSeed(int32 NewGenerationSeed)
+{
+	if (NewGenerationSeed < 0)
+	{
+		return true;
+	}
+	else
+	{
+		GenerationSeed = NewGenerationSeed;
+
+		return false;
+	}
+}
+
+bool AFWGen::SetGenerationMaxZFromActorZ(float NewGenerationMaxZFromActorZ)
+{
+	if (NewGenerationMaxZFromActorZ < 0.0f)
+	{
+		return true;
+	}
+	else
+	{
+		GenerationMaxZFromActorZ = NewGenerationMaxZFromActorZ;
+
+		return false;
+	}
+}
+
+void AFWGen::SetInvertWorld(bool InvertWorld)
+{
+	this->InvertWorld = InvertWorld;
+}
+
+bool AFWGen::SetWorldSize(int32 NewWorldSize)
+{
+	if (NewWorldSize < -1)
+	{
+		return true;
+	}
+	else
+	{
+		WorldSize = NewWorldSize;
+
+		return false;
+	}
+}
+
+void AFWGen::SetGroundMaterial(UMaterialInterface* NewGroundMaterial)
+{
+	GroundMaterial = NewGroundMaterial;
+}
+
+bool AFWGen::SetFirstMaterialMaxRelativeHeight(float NewFirstMaterialMaxRelativeHeight)
+{
+	if ((NewFirstMaterialMaxRelativeHeight < 0.0f) || (NewFirstMaterialMaxRelativeHeight > 1.0f) || (NewFirstMaterialMaxRelativeHeight > SecondMaterialMaxRelativeHeight))
+	{
+		return true;
+	}
+	else
+	{
+		FirstMaterialMaxRelativeHeight = NewFirstMaterialMaxRelativeHeight;
+
+		return false;
+	}
+}
+
+bool AFWGen::SetSecondMaterialMaxRelativeHeight(float NewSecondMaterialMaxRelativeHeight)
+{
+	if ((NewSecondMaterialMaxRelativeHeight < 0.0f) || (NewSecondMaterialMaxRelativeHeight > 1.0f) || (NewSecondMaterialMaxRelativeHeight < FirstMaterialMaxRelativeHeight))
+	{
+		return true;
+	}
+	else
+	{
+		SecondMaterialMaxRelativeHeight = NewSecondMaterialMaxRelativeHeight;
+
+		return false;
+	}
+}
+
+bool AFWGen::SetMaterialHeightMaxDeviation(float NewMaterialHeightMaxDeviation)
+{
+	if ((NewMaterialHeightMaxDeviation > 1.0f) || (NewMaterialHeightMaxDeviation < 0.0f))
+	{
+		return true;
+	}
+	else
+	{
+		MaterialHeightMaxDeviation = NewMaterialHeightMaxDeviation;
+
+		return false;
+	}
+}
+
+void AFWGen::SetCreateWater(bool CreateWater)
+{
+	this->CreateWater = CreateWater;
+}
+
+bool AFWGen::SetZWaterLevelInWorld(float NewZWaterLevelInWorld)
+{
+	if ((NewZWaterLevelInWorld < 0.0f) || (NewZWaterLevelInWorld > 1.0f))
+	{
+		return true;
+	}
+	else
+	{
+		ZWaterLevelInWorld = NewZWaterLevelInWorld;
+
+		return false;
+	}
+}
+
+bool AFWGen::SetWaterSize(int32 NewWaterSize)
+{
+	if (NewWaterSize <= 0)
+	{
+		return true;
+	}
+	else
+	{
+		WaterSize = NewWaterSize;
+
+		return false;
+	}
+}
+
+void AFWGen::SetWaterMaterial(UMaterialInterface* NewWaterMaterial)
+{
+	WaterMaterial = NewWaterMaterial;
+}
+
 #if WITH_EDITOR
 void AFWGen::PostEditMove(bool bFinished)
 {
