@@ -1,6 +1,6 @@
 # Parameters
 
-You can configure the generator's parameters in the details tab.<br>
+You can configure the generator's parameters in the details tab (or through the "set" functions of the generator - see below).<br>
 <br>
 
 <h3>Preview</h3>
