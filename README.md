@@ -6,7 +6,6 @@ You can configure the generator's parameters in the details tab (or through the 
 <h3>Preview</h3>
 <ul>
     <li><b>Complex Preview</b> - generates one part of the world (every time a parameter is changed) as an example of how it's gonna look.</li>
-    <li><b>Water Preview</b> - shows water plane (see Water parameters below) and its material in the Editor as an example of how it's gonna look.</li>
 </ul>
 
 <h3>Chunks</h3>
@@ -38,6 +37,16 @@ You can configure the generator's parameters in the details tab (or through the 
     <li><b>First Material Max Relative Height</b> (valid values range: [0.0, 1.0] but always lower than Second Material Max Relative Height) - Ground Material must consist out of 3 materials (layers), for example, it can contain: grass, rock, and snow (3 layers). This parameter determines the maximum relative height (from the actor's Z coordinate to the Generation Max Z From Actor Z) in the range from 0.0 to 1.0, on which terrain will contain the first layer (grass for example). See Terrain Material below on how to set this material. Note, that terrain which is higher than the second material height will have a 3rd layer of material (snow for example).</li>
     <li><b>Second Material Max Relative Height</b> (valid values range: [0.0, 1.0] but always higher than First Material Max Relative Height) - Ground Material must consist out of 3 materials (layers), for example, it can contain: grass, rock, and snow (3 layers). This parameter determines the maximum relative height (from the actor's Z coordinate to the Generation Max Z From Actor Z) in the range from 0.0 to 1.0, on which terrain will contain the second layer (rock for example). See Terrain Material below on how to set this material. Note, that terrain which is higher than the second material height will have a 3rd layer of material (snow for example).</li>
     <li><b>Material Height Max Deviation</b> (valid values range: [0.0, 1.0]) - this is a possible deviation from values set to the "First Material Max Relative Height" and the "Second Material Max Relative Height". For example, if the "First Material Max Relative Height" is set to 0.5 and the "Material Height Max Deviation" is set to 0.1, then for every vertex of terrain value 0.5 can vary from 0.4 to 0.6.</li>
+</ul>
+
+<h3>Ground Material Blend</h3>
+<ul>
+    <li><b>First Material On Second Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of first material appearance on the second material for a vertices.</li>
+    <li><b>First Material On Third Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of first material appearance on the third material for a vertices.</li>
+    <li><b>Second Material On First Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of second material appearance on the first material for a vertices.</li>
+    <li><b>Second Material On Third Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of second material appearance on the third material for a vertices.</li>
+    <li><b>Third Material On First Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of third material appearance on the first material for a vertices.</li>
+    <li><b>Third Material On Second Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of third material appearance on the second material for a vertices.</li>
 </ul>
 
 <h3>Water</h3>
