@@ -49,6 +49,13 @@ You can configure the generator's parameters in the details tab (or through the 
     <li><b>Third Material On Second Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of third material appearance on the second material for a vertices.</li>
 </ul>
 
+<h3>Ground Relief</h3>
+<ul>
+    <li><b>First Layer Relief Strength</b> - determines how much the original relief (of the terrain with the first material) will be flattened or sharpened. Use the value of 1.0 to not change the original relief.</li>
+    <li><b>Second Layer Relief Strength</b> - determines how much the original relief (of the terrain with the second material) will be flattened or sharpened. Use the value of 1.0 to not change the original relief.</li>
+    <li><b>Third Layer Relief Strength</b> - determines how much the original relief (of the terrain with the third material) will be flattened or sharpened. Use the value of 1.0 to not change the original relief.</li>
+</ul>
+
 <h3>Water</h3>
 <ul>
     <li><b>Create Water</b> - determines is the world should be spawned in the water.</li>
