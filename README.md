@@ -68,7 +68,7 @@ If you want your terrain to have only one material then you can just connect you
     <li>To access the plugin in the C++ code: In your project's .Build.cs file you must add "FWorldGenerator" to PublicDependencyModuleNames. Recompile. And now you can include "FWGen.h".</li>
 </ol>
 
-To use the generator just place an object of the <b>FWGen</b> class (search in the Modes tab in UE) in your level and configure its details. Don't forget to enable Complex Preview if you want to see how it look.<br>
+To use the generator just place an object of the <b>FWGen</b> class (search in the Modes tab in UE) in your level and configure its details. Don't forget to enable Complex Preview if you want to see how it looks.<br>
 To generate the world in the runtime you need to call the <b>GenerateWorld()</b> function from this object.
 
 # Functions
