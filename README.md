@@ -60,7 +60,7 @@ If you want your terrain to have only one material then you can just connect you
 
 # How to use it
 <ol>
-    <li>Download plugin from the releases tab or just clone the master branch.</li>
+    <li>Download the plugin from the releases tab or just clone the master branch.</li>
     <li>Unzip the downloaded archive and move the unzipped folder to your project's "Plugins" folder (create one if it doesn't exist). So your project's root directory will have the "Plugins" folder and the "FWorldGenerator" folder inside it, containing the .uplugin in there.</li>
     <li>If you have a Blueprint project you need to convert it to the C++ project by just doing "Add New C++ Class" inside the engine which will set up everything needed.</li>
     <li>If you have code in your project: Right-click your .uproject file and click "Generate Visual Studio project files".</li>
