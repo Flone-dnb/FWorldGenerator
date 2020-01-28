@@ -6,7 +6,6 @@
 #include "FWGen.h"
 
 // STL
-#include <random>
 #include <ctime>
 
 // External
@@ -167,18 +166,7 @@ void AFWGen::GenerateWorld()
 
 	if (CreateWater)
 	{
-#if WITH_EDITOR
-		if (WaterPreview)
-		{
-			WaterPlane->SetVisibility(true);
-		}
-		else
-		{
-			WaterPlane->SetVisibility(false);
-		}
-#else
 		WaterPlane->SetVisibility(true);
-#endif // WITH_EDITOR
 	}
 	else
 	{
@@ -192,6 +180,7 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
 	FName MemberPropertyChanged = (PropertyChangedEvent.MemberProperty ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None);
+	
 
 	if (
 		MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ChunkPieceRowCount)
@@ -204,8 +193,46 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GenerationMaxZFromActorZ)
 		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ComplexPreview)
 		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, InvertWorld)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, FirstMaterialOnSecondProbability)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, FirstMaterialOnThirdProbability)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, SecondMaterialOnFirstProbability)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, SecondMaterialOnThirdProbability)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ThirdMaterialOnFirstProbability)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ThirdMaterialOnSecondProbability)
 		)
 	{
+		if ((FirstMaterialOnSecondProbability < 0.0f) || (FirstMaterialOnSecondProbability > 1.0f))
+		{
+			FirstMaterialOnSecondProbability = 0.01f;
+		}
+
+		if ((FirstMaterialOnThirdProbability < 0.0f) || (FirstMaterialOnThirdProbability > 1.0f))
+		{
+			FirstMaterialOnThirdProbability = 0.01f;
+		}
+
+		if ((SecondMaterialOnFirstProbability < 0.0f) || (SecondMaterialOnFirstProbability > 1.0f))
+		{
+			SecondMaterialOnFirstProbability = 0.01f;
+		}
+
+		if ((SecondMaterialOnThirdProbability < 0.0f) || (SecondMaterialOnThirdProbability > 1.0f))
+		{
+			SecondMaterialOnThirdProbability = 0.01f;
+		}
+
+		if ((ThirdMaterialOnFirstProbability < 0.0f) || (ThirdMaterialOnFirstProbability > 1.0f))
+		{
+			ThirdMaterialOnFirstProbability = 0.01f;
+		}
+
+		if ((ThirdMaterialOnSecondProbability < 0.0f) || (ThirdMaterialOnSecondProbability > 1.0f))
+		{
+			ThirdMaterialOnSecondProbability = 0.01f;
+		}
+
+
+
 		if (ChunkPieceRowCount < 1)
 		{
 			ChunkPieceRowCount = 1;
@@ -259,8 +286,7 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ZWaterLevelInWorld)
 			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WaterSize)
 			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WaterMaterial)
-			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GroundMaterial)
-			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, WaterPreview))
+			|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, GroundMaterial))
 	{
 		if (ZWaterLevelInWorld < 0.0f)
 		{
@@ -281,15 +307,7 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 			if (WaterMaterial)
 			{
 				WaterPlane->SetMaterial(0, WaterMaterial);
-			}
-
-			if (WaterPreview)
-			{
 				WaterPlane->SetVisibility(true);
-			}
-			else
-			{
-				WaterPlane->SetVisibility(false);
 			}
 
 			WaterPlane->SetWorldLocation(FVector(
@@ -527,6 +545,48 @@ bool AFWGen::SetMaterialHeightMaxDeviation(float NewMaterialHeightMaxDeviation)
 	}
 }
 
+bool AFWGen::SetFirstMaterialOnOtherProbability(float FirstOnSecond, float FirstOnThird)
+{
+	if ( ((FirstOnSecond > 1.0f) || (FirstOnSecond < 0.0f)) || ((FirstOnThird > 1.0f) || (FirstOnThird < 0.0f)))
+	{
+		return true;
+	}
+	else
+	{
+		FirstMaterialOnSecondProbability = FirstOnSecond;
+		FirstMaterialOnThirdProbability  = FirstOnThird;
+		return false;
+	}
+}
+
+bool AFWGen::SetSecondMaterialOnOtherProbability(float SecondOnFirst, float SecondOnThird)
+{
+	if ( ((SecondOnFirst > 1.0f) || (SecondOnFirst < 0.0f)) || ((SecondOnThird > 1.0f) || (SecondOnThird < 0.0f)))
+	{
+		return true;
+	}
+	else
+	{
+		SecondMaterialOnFirstProbability = SecondOnFirst;
+		SecondMaterialOnThirdProbability = SecondOnThird;
+		return false;
+	}
+}
+
+bool AFWGen::SetThirdMaterialOnOtherProbability(float ThirdOnFirst, float ThirdOnSecond)
+{
+	if ( ((ThirdOnFirst > 1.0f) || (ThirdOnFirst < 0.0f)) || ((ThirdOnSecond > 1.0f) || (ThirdOnSecond < 0.0f)))
+	{
+		return true;
+	}
+	else
+	{
+		ThirdMaterialOnFirstProbability  = ThirdOnFirst;
+		ThirdMaterialOnSecondProbability = ThirdOnSecond;
+		return false;
+	}
+}
+
 void AFWGen::SetCreateWater(bool CreateWater)
 {
 	this->CreateWater = CreateWater;
@@ -601,6 +661,156 @@ void AFWGen::generateSeed()
 	iGeneratedSeed = seed;
 }
 
+float AFWGen::pickVertexMaterial(double height, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd)
+{
+	std::uniform_real_distribution<float> urd_mat(0.005f, 1.0f);
+	std::uniform_int_distribution<int> urd_bool(0, 1);
+
+
+	float fDiviation = (*pUrd)(*pRnd);
+
+	float fVertexColor = 0.0f; // apply first material to the vertex
+
+	if ( (height >= (FirstMaterialMaxRelativeHeight + fDiviation)) 
+		&& (height <= (SecondMaterialMaxRelativeHeight + fDiviation)) )
+	{
+		fVertexColor = 0.5f; // apply second material to the vertex
+
+		float fFirstProb = urd_mat(*pRnd);
+		float fThirdProb  = urd_mat(*pRnd);
+
+		bool bPickFirst = false, bPickThird = false;
+
+		if (fFirstProb <= FirstMaterialOnSecondProbability)
+		{
+			bPickFirst = true;
+		}
+
+		if (fThirdProb <= ThirdMaterialOnSecondProbability)
+		{
+			bPickThird = true;
+		}
+
+		if (bPickFirst && bPickThird)
+		{
+			if (urd_bool(*pRnd))
+			{
+				// Pick Third
+				fVertexColor = 1.0f; // apply third material to the vertex
+			}
+			else
+			{
+				// Pick First
+				fVertexColor = 0.0f; // apply first material to the vertex
+			}
+		}
+		else
+		{
+			if (bPickFirst)
+			{
+				fVertexColor = 0.0f; // apply first material to the vertex
+			}
+
+			if (bPickThird)
+			{
+				fVertexColor = 1.0f; // apply third material to the vertex
+			}
+		}
+	}
+	else if (height >= (SecondMaterialMaxRelativeHeight + fDiviation))
+	{
+		fVertexColor = 1.0f; // apply third material to the vertex
+
+		float fFirstProb  = urd_mat(*pRnd);
+		float fSecondProb = urd_mat(*pRnd);
+
+		bool bPickFirst = false, bPickSecond = false;
+
+		if (fFirstProb <= FirstMaterialOnThirdProbability)
+		{
+			bPickFirst = true;
+		}
+
+		if (fSecondProb <= SecondMaterialOnThirdProbability)
+		{
+			bPickSecond = true;
+		}
+
+		if (bPickFirst && bPickSecond)
+		{
+			if (urd_bool(*pRnd))
+			{
+				// Pick Third
+				fVertexColor = 0.5f; // apply second material to the vertex
+			}
+			else
+			{
+				// Pick First
+				fVertexColor = 0.0f; // apply first material to the vertex
+			}
+		}
+		else
+		{
+			if (bPickFirst)
+			{
+				fVertexColor = 0.0f; // apply first material to the vertex
+			}
+
+			if (bPickSecond)
+			{
+				fVertexColor = 0.5f; // apply second material to the vertex
+			}
+		}
+	}
+	else
+	{
+		// first material
+
+		float fSecondProb = urd_mat(*pRnd);
+		float fThirdProb  = urd_mat(*pRnd);
+
+		bool bPickSecond = false, bPickThird = false;
+
+		if (fSecondProb <= SecondMaterialOnFirstProbability)
+		{
+			bPickSecond = true;
+		}
+
+		if (fThirdProb <= ThirdMaterialOnFirstProbability)
+		{
+			bPickThird = true;
+		}
+
+		if (bPickSecond && bPickThird)
+		{
+			if (urd_bool(*pRnd))
+			{
+				// Pick Third
+				fVertexColor = 1.0f; // apply third material to the vertex
+			}
+			else
+			{
+				// Pick Second
+				fVertexColor = 0.5f; // apply second material to the vertex
+			}
+		}
+		else
+		{
+			if (bPickSecond)
+			{
+				fVertexColor = 0.5f; // apply second material to the vertex
+			}
+
+			if (bPickThird)
+			{
+				fVertexColor = 1.0f; // apply third material to the vertex
+			}
+		}
+	}
+
+	return fVertexColor;
+}
+
 FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex)
 {
 	// Generation setup
@@ -670,6 +880,8 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 	std::mt19937_64 rnd(iGeneratedSeed);
 	std::uniform_real_distribution<float> urd(-MaterialHeightMaxDeviation, MaterialHeightMaxDeviation);
 
+
+
 	// Generation
 
 	for (int32 i = 0; i < iCorrectedRowCount; i++)
@@ -705,23 +917,14 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 
 
 
+
 			// Set "material" to vertex
 
-			float fDiviation = urd(rnd);
+			float fAlphaColor = pickVertexMaterial(generatedValue, &urd, &rnd);
 
-			float fAlphaColor = 0.0f; // apply first material to the vertex
+			pNewChunk->vVertexColors .Add(FLinearColor(0.0f, 0.0f, 0.0f, fAlphaColor));
 
-			if ( (generatedValue >= (FirstMaterialMaxRelativeHeight + fDiviation)) 
-				 && (generatedValue <= (SecondMaterialMaxRelativeHeight + fDiviation)) )
-			{
-				fAlphaColor = 0.5f; // apply second material to the vertex
-			}
-			else if (generatedValue >= (SecondMaterialMaxRelativeHeight + fDiviation))
-			{
-				fAlphaColor = 1.0f; // apply third material to the vertex
-			}
 
-			pNewChunk->vVertexColors .Add(FLinearColor(0.0f, 0.75, 0.0f, fAlphaColor));
 
 
 			vPrevLocation.X += ChunkPieceSizeX;
@@ -818,4 +1021,3 @@ void AFWGen::refreshPreview()
 	);
 }
 #endif // WITH_EDITOR
-

@@ -5,11 +5,14 @@
 
 #pragma once
 
+// UE
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ProceduralMeshComponent.h"
 
+// STL
 #include <vector>
+#include <random>
 
 #include "FWGen.generated.h"
 
@@ -102,6 +105,15 @@ public:
 		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
 			bool SetMaterialHeightMaxDeviation(float NewMaterialHeightMaxDeviation);
 
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
+			bool SetFirstMaterialOnOtherProbability(float FirstOnSecond, float FirstOnThird);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
+			bool SetSecondMaterialOnOtherProbability(float SecondOnFirst, float SecondOnThird);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
+			bool SetThirdMaterialOnOtherProbability(float ThirdOnFirst, float ThirdOnSecond);
+
 
 		// Water
 
@@ -128,22 +140,19 @@ public:
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
 		bool  ComplexPreview = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
-		bool  WaterPreview = false;
 #endif // WITH_EDITOR
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		int32 ChunkPieceRowCount = 100;
+		int32 ChunkPieceRowCount = 150;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		int32 ChunkPieceColumnCount = 100;
+		int32 ChunkPieceColumnCount = 150;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		float ChunkPieceSizeX = 400.0f;
+		float ChunkPieceSizeX = 300.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		float ChunkPieceSizeY = 400.0f;
+		float ChunkPieceSizeY = 300.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
 		int32 ViewDistance = 1;
@@ -161,7 +170,7 @@ public:
 		int32 GenerationSeed = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		float GenerationMaxZFromActorZ = 25000.0f;
+		float GenerationMaxZFromActorZ = 50000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
 		bool  InvertWorld = false;
@@ -189,7 +198,26 @@ public:
 		float SecondMaterialMaxRelativeHeight = 0.7f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
-		float MaterialHeightMaxDeviation = 0.025f;
+		float MaterialHeightMaxDeviation = 0.05f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
+		float FirstMaterialOnSecondProbability = 0.05f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
+		float FirstMaterialOnThirdProbability  = 0.005f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
+		float SecondMaterialOnFirstProbability = 0.03f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
+		float SecondMaterialOnThirdProbability = 0.1f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
+		float ThirdMaterialOnFirstProbability  = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
+		float ThirdMaterialOnSecondProbability = 0.005f;
+
 
 
 
@@ -197,7 +225,7 @@ public:
 		bool  CreateWater = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
-		float ZWaterLevelInWorld = 0.3f;
+		float ZWaterLevelInWorld = 0.2f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 		int32 WaterSize = 10;
@@ -232,6 +260,7 @@ private:
 
 	FWGenChunk* generateChunk(long long iX, long long iY, int32 iSectionIndex);
 	void generateSeed();
+	float pickVertexMaterial(double height, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd);
 
 #if WITH_EDITOR
 	void refreshPreview();
