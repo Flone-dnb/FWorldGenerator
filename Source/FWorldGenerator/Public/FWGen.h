@@ -105,14 +105,24 @@ public:
 		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
 			bool SetMaterialHeightMaxDeviation(float NewMaterialHeightMaxDeviation);
 
-		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Material Blend")
 			bool SetFirstMaterialOnOtherProbability(float FirstOnSecond, float FirstOnThird);
 
-		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Material Blend")
 			bool SetSecondMaterialOnOtherProbability(float SecondOnFirst, float SecondOnThird);
 
-		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Material Blend")
 			bool SetThirdMaterialOnOtherProbability(float ThirdOnFirst, float ThirdOnSecond);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Relief")
+			void SetFirstLayerReliefStrength(float NewFirstLayerReliefStrength);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Relief")
+			void SetSecondLayerReliefStrength(float NewSecondLayerReliefStrength);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Relief")
+			void SetThirdLayerReliefStrength(float NewThirdLayerReliefStrength);
+
 
 
 		// Water
@@ -218,6 +228,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
 		float ThirdMaterialOnSecondProbability = 0.005f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Relief")
+		float FirstLayerReliefStrength  = 0.7f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Relief")
+		float SecondLayerReliefStrength = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Relief")
+		float ThirdLayerReliefStrength  = 1.0f;
+
 
 
 
@@ -225,7 +244,7 @@ public:
 		bool  CreateWater = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
-		float ZWaterLevelInWorld = 0.2f;
+		float ZWaterLevelInWorld = 0.25f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 		int32 WaterSize = 10;
@@ -260,7 +279,7 @@ private:
 
 	FWGenChunk* generateChunk(long long iX, long long iY, int32 iSectionIndex);
 	void generateSeed();
-	float pickVertexMaterial(double height, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd);
+	float pickVertexMaterial(double height, bool bApplyRND, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
 
 #if WITH_EDITOR
 	void refreshPreview();

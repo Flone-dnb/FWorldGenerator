@@ -661,7 +661,7 @@ void AFWGen::generateSeed()
 	iGeneratedSeed = seed;
 }
 
-float AFWGen::pickVertexMaterial(double height, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd)
+float AFWGen::pickVertexMaterial(double height, bool bApplyRND, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd)
 {
 	std::uniform_real_distribution<float> urd_mat(0.005f, 1.0f);
 	std::uniform_int_distribution<int> urd_bool(0, 1);
@@ -676,44 +676,52 @@ float AFWGen::pickVertexMaterial(double height, std::uniform_real_distribution<f
 	{
 		fVertexColor = 0.5f; // apply second material to the vertex
 
-		float fFirstProb = urd_mat(*pRnd);
-		float fThirdProb  = urd_mat(*pRnd);
-
-		bool bPickFirst = false, bPickThird = false;
-
-		if (fFirstProb <= FirstMaterialOnSecondProbability)
+		if (pfLayerTypeWithoutRnd)
 		{
-			bPickFirst = true;
+			*pfLayerTypeWithoutRnd = fVertexColor;
 		}
 
-		if (fThirdProb <= ThirdMaterialOnSecondProbability)
+		if (bApplyRND)
 		{
-			bPickThird = true;
-		}
+			float fFirstProb = urd_mat(*pRnd);
+			float fThirdProb  = urd_mat(*pRnd);
 
-		if (bPickFirst && bPickThird)
-		{
-			if (urd_bool(*pRnd))
+			bool bPickFirst = false, bPickThird = false;
+
+			if (fFirstProb <= FirstMaterialOnSecondProbability)
 			{
-				// Pick Third
-				fVertexColor = 1.0f; // apply third material to the vertex
+				bPickFirst = true;
+			}
+
+			if (fThirdProb <= ThirdMaterialOnSecondProbability)
+			{
+				bPickThird = true;
+			}
+
+			if (bPickFirst && bPickThird)
+			{
+				if (urd_bool(*pRnd))
+				{
+					// Pick Third
+					fVertexColor = 1.0f; // apply third material to the vertex
+				}
+				else
+				{
+					// Pick First
+					fVertexColor = 0.0f; // apply first material to the vertex
+				}
 			}
 			else
 			{
-				// Pick First
-				fVertexColor = 0.0f; // apply first material to the vertex
-			}
-		}
-		else
-		{
-			if (bPickFirst)
-			{
-				fVertexColor = 0.0f; // apply first material to the vertex
-			}
+				if (bPickFirst)
+				{
+					fVertexColor = 0.0f; // apply first material to the vertex
+				}
 
-			if (bPickThird)
-			{
-				fVertexColor = 1.0f; // apply third material to the vertex
+				if (bPickThird)
+				{
+					fVertexColor = 1.0f; // apply third material to the vertex
+				}
 			}
 		}
 	}
@@ -721,50 +729,63 @@ float AFWGen::pickVertexMaterial(double height, std::uniform_real_distribution<f
 	{
 		fVertexColor = 1.0f; // apply third material to the vertex
 
-		float fFirstProb  = urd_mat(*pRnd);
-		float fSecondProb = urd_mat(*pRnd);
-
-		bool bPickFirst = false, bPickSecond = false;
-
-		if (fFirstProb <= FirstMaterialOnThirdProbability)
+		if (pfLayerTypeWithoutRnd)
 		{
-			bPickFirst = true;
+			*pfLayerTypeWithoutRnd = fVertexColor;
 		}
 
-		if (fSecondProb <= SecondMaterialOnThirdProbability)
+		if (bApplyRND)
 		{
-			bPickSecond = true;
-		}
+			float fFirstProb  = urd_mat(*pRnd);
+			float fSecondProb = urd_mat(*pRnd);
 
-		if (bPickFirst && bPickSecond)
-		{
-			if (urd_bool(*pRnd))
+			bool bPickFirst = false, bPickSecond = false;
+
+			if (fFirstProb <= FirstMaterialOnThirdProbability)
 			{
-				// Pick Third
-				fVertexColor = 0.5f; // apply second material to the vertex
+				bPickFirst = true;
+			}
+
+			if (fSecondProb <= SecondMaterialOnThirdProbability)
+			{
+				bPickSecond = true;
+			}
+
+			if (bPickFirst && bPickSecond)
+			{
+				if (urd_bool(*pRnd))
+				{
+					// Pick Third
+					fVertexColor = 0.5f; // apply second material to the vertex
+				}
+				else
+				{
+					// Pick First
+					fVertexColor = 0.0f; // apply first material to the vertex
+				}
 			}
 			else
 			{
-				// Pick First
-				fVertexColor = 0.0f; // apply first material to the vertex
-			}
-		}
-		else
-		{
-			if (bPickFirst)
-			{
-				fVertexColor = 0.0f; // apply first material to the vertex
-			}
+				if (bPickFirst)
+				{
+					fVertexColor = 0.0f; // apply first material to the vertex
+				}
 
-			if (bPickSecond)
-			{
-				fVertexColor = 0.5f; // apply second material to the vertex
+				if (bPickSecond)
+				{
+					fVertexColor = 0.5f; // apply second material to the vertex
+				}
 			}
 		}
 	}
-	else
+	else if (bApplyRND)
 	{
 		// first material
+
+		if (pfLayerTypeWithoutRnd)
+		{
+			*pfLayerTypeWithoutRnd = fVertexColor;
+		}
 
 		float fSecondProb = urd_mat(*pRnd);
 		float fThirdProb  = urd_mat(*pRnd);
@@ -881,7 +902,6 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 	std::uniform_real_distribution<float> urd(-MaterialHeightMaxDeviation, MaterialHeightMaxDeviation);
 
 
-
 	// Generation
 
 	for (int32 i = 0; i < iCorrectedRowCount; i++)
@@ -900,16 +920,6 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 				generatedValue = 1.0 - generatedValue;
 			}
 
-			// Here return value from perlinNoise.octaveNoise0_1 can be
-			// 0    , but should be   GetActorLocation().Z
-			// ...  , but should be   value from interval [GetActorLocation().Z; GenerationMaxZFromActorZ]
-			// 1    , but should be   GenerationMaxZFromActorZ
-
-			// So we do this:
-			vPrevLocation.Z = GetActorLocation().Z + (fInterval * generatedValue);
-
-
-			pNewChunk->vVertices .Add (vPrevLocation);
 
 			pNewChunk->vNormals      .Add(FVector(0, 0, 1.0f));
 			pNewChunk->vUV0          .Add(FVector2D(i, j));
@@ -920,10 +930,51 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 
 			// Set "material" to vertex
 
-			float fAlphaColor = pickVertexMaterial(generatedValue, &urd, &rnd);
+			float fAlphaColor = 0.0f;
+
+			float fAlphaColorWithoutRnd = 0.0f;
+
+			if ((i == 0) || (i == iCorrectedRowCount - 1) || (j == 0) || (j == iCorrectedColumnCount - 1))
+			{
+				fAlphaColor = pickVertexMaterial(generatedValue, false, &urd, &rnd, &fAlphaColorWithoutRnd);
+			}
+			else
+			{
+				fAlphaColor = pickVertexMaterial(generatedValue, true, &urd, &rnd, &fAlphaColorWithoutRnd);
+			}
+
+
 
 			pNewChunk->vVertexColors .Add(FLinearColor(0.0f, 0.0f, 0.0f, fAlphaColor));
 
+
+			// Set vertex Z
+
+			// Here return value from perlinNoise.octaveNoise0_1 can be
+			// 0    , but should be   GetActorLocation().Z
+			// ...  , but should be   value from interval [GetActorLocation().Z; GenerationMaxZFromActorZ]
+			// 1    , but should be   GenerationMaxZFromActorZ
+
+			if (fAlphaColorWithoutRnd < 0.1f)
+			{
+				// First Layer
+
+				vPrevLocation.Z = GetActorLocation().Z + (fInterval * generatedValue) * FirstLayerReliefStrength;
+			}
+			else if (fAlphaColorWithoutRnd < 0.6f)
+			{
+				// Second Layer
+
+				vPrevLocation.Z = GetActorLocation().Z + (fInterval * generatedValue) * SecondLayerReliefStrength;
+			}
+			else
+			{
+				// Third Layer
+
+				vPrevLocation.Z = GetActorLocation().Z + (fInterval * generatedValue) * ThirdLayerReliefStrength;
+			}
+
+			pNewChunk->vVertices .Add (vPrevLocation);
 
 
 
@@ -1021,3 +1072,18 @@ void AFWGen::refreshPreview()
 	);
 }
 #endif // WITH_EDITOR
+
+void AFWGen::SetFirstLayerReliefStrength(float NewFirstLayerReliefStrength)
+{
+	FirstLayerReliefStrength = NewFirstLayerReliefStrength;
+}
+
+void AFWGen::SetSecondLayerReliefStrength(float NewSecondLayerReliefStrength)
+{
+	SecondLayerReliefStrength = NewSecondLayerReliefStrength;
+}
+
+void AFWGen::SetThirdLayerReliefStrength(float NewThirdLayerReliefStrength)
+{
+	ThirdLayerReliefStrength = NewThirdLayerReliefStrength;
+}
