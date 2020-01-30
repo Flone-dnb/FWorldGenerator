@@ -114,14 +114,8 @@ public:
 		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Material Blend")
 			bool SetThirdMaterialOnOtherProbability(float ThirdOnFirst, float ThirdOnSecond);
 
-		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Relief")
-			void SetFirstLayerReliefStrength(float NewFirstLayerReliefStrength);
-
-		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Relief")
-			void SetSecondLayerReliefStrength(float NewSecondLayerReliefStrength);
-
-		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Relief")
-			void SetThirdLayerReliefStrength(float NewThirdLayerReliefStrength);
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Material Blend")
+			bool SetIncreasedMaterialBlendProbability(float NewIncreasedMaterialBlendProbability);
 
 
 
@@ -129,6 +123,9 @@ public:
 
 		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Water")
 			void SetCreateWater(bool CreateWater);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Water")
+			void SetSecondMaterialUnderWater(bool NewSecondMaterialUnderWater);
 
 		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Water")
 			bool SetZWaterLevelInWorld(float NewZWaterLevelInWorld);
@@ -171,10 +168,10 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		float GenerationFrequency = 0.7f;
+		float GenerationFrequency = 0.42f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		int32 GenerationOctaves = 7;
+		int32 GenerationOctaves = 6;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
 		int32 GenerationSeed = 0;
@@ -208,40 +205,37 @@ public:
 		float SecondMaterialMaxRelativeHeight = 0.7f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
-		float MaterialHeightMaxDeviation = 0.05f;
+		float MaterialHeightMaxDeviation = 0.08f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
-		float FirstMaterialOnSecondProbability = 0.05f;
+		float FirstMaterialOnSecondProbability = 0.02f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
-		float FirstMaterialOnThirdProbability  = 0.005f;
+		float FirstMaterialOnThirdProbability  = 0.002f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
-		float SecondMaterialOnFirstProbability = 0.03f;
+		float SecondMaterialOnFirstProbability = 0.008f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
-		float SecondMaterialOnThirdProbability = 0.1f;
+		float SecondMaterialOnThirdProbability = 0.02f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
 		float ThirdMaterialOnFirstProbability  = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
-		float ThirdMaterialOnSecondProbability = 0.005f;
+		float ThirdMaterialOnSecondProbability = 0.004f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Relief")
-		float FirstLayerReliefStrength  = 0.7f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Relief")
-		float SecondLayerReliefStrength = 1.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Relief")
-		float ThirdLayerReliefStrength  = 1.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
+		float IncreasedMaterialBlendProbability = 0.16f;
 
 
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 		bool  CreateWater = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+		bool  SecondMaterialUnderWater = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 		float ZWaterLevelInWorld = 0.25f;
@@ -280,6 +274,9 @@ private:
 	FWGenChunk* generateChunk(long long iX, long long iY, int32 iSectionIndex);
 	void generateSeed();
 	float pickVertexMaterial(double height, bool bApplyRND, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
+	void blendWorldMaterialsMore();
+
+	bool areEqual(float a, float b, float eps);
 
 #if WITH_EDITOR
 	void refreshPreview();
@@ -356,6 +353,7 @@ public:
 	TArray<int32>             vTriangles;
 	TArray<FVector>           vNormals;
 	TArray<FVector2D>         vUV0;
+	std::vector<int32>        vLayerIndex;
 
 private:
 
@@ -414,16 +412,6 @@ public:
 			delete vChunks[i];
 		}
 	}
-
-private:
-
-	int32 ViewDistance;
-	// ViewDistance == 1  ---  Always loaded chunks: 3x3.
-	// ViewDistance == 2  ---  Always loaded chunks: 5x5.
-	// ViewDistance == 3  ---  Always loaded chunks: 7x7.
-	// ViewDistance == 4  ---  Always loaded chunks: 9x9.
-	// ... (The player is always in the central chunk) ...
-
 
 	std::vector<FWGenChunk*> vChunks;
 };

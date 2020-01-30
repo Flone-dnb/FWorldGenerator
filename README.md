@@ -47,18 +47,13 @@ You can configure the generator's parameters in the details tab (or through the 
     <li><b>Second Material On Third Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of second material appearance on the third material for a vertices.</li>
     <li><b>Third Material On First Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of third material appearance on the first material for a vertices.</li>
     <li><b>Third Material On Second Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of third material appearance on the second material for a vertices.</li>
-</ul>
-
-<h3>Ground Relief</h3>
-<ul>
-    <li><b>First Layer Relief Strength</b> - determines how much the original relief (of the terrain with the first material) will be flattened or sharpened. Use the value of 1.0 to not change the original relief.</li>
-    <li><b>Second Layer Relief Strength</b> - determines how much the original relief (of the terrain with the second material) will be flattened or sharpened. Use the value of 1.0 to not change the original relief.</li>
-    <li><b>Third Layer Relief Strength</b> - determines how much the original relief (of the terrain with the third material) will be flattened or sharpened. Use the value of 1.0 to not change the original relief.</li>
+    <li><b>Increased Material Blend Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of that materials on other materials will be bigger.</li>
 </ul>
 
 <h3>Water</h3>
 <ul>
     <li><b>Create Water</b> - determines is the world should be spawned in the water.</li>
+    <li><b>Second Material Under Water</b> - determines if the underwater ground should have second material.</li>
     <li><b>Z Water Level in World</b> (valid values range: [0.0, 1.0]) - determines the water height from actor's Z, from 0.0 to 1.0, where 0.0 - actor's Z and 1.0 - Generation Max Z From Actor Z.</li>
     <li><b>Water Size</b> (valid values range: [1, ...]) - determines the size of the water in chunks.</li>
     <li><b>Water Material</b> - determines the material which the water will have.</li>

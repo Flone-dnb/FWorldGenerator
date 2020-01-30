@@ -104,7 +104,7 @@ AFWGen::~AFWGen()
 
 	if (pProcMeshComponent->IsPendingKill())
 	{
-		return;
+return;
 	}
 
 	pProcMeshComponent->DestroyComponent();
@@ -127,9 +127,10 @@ void AFWGen::GenerateWorld()
 
 		int32 iSectionIndex = 0;
 
-		for (long long x = -ViewDistance; x < ViewDistance + 1; x++)
+		
+		for (long long y = ViewDistance; y > -ViewDistance - 1; y--)
 		{
-			for (long long y = -ViewDistance; y < ViewDistance + 1; y++)
+			for (long long x = -ViewDistance; x < ViewDistance + 1; x++)
 			{
 				pChunkMap->addChunk(generateChunk(x, y, iSectionIndex));
 
@@ -140,6 +141,14 @@ void AFWGen::GenerateWorld()
 	else
 	{
 		pChunkMap->addChunk(generateChunk(0, 0, 0));
+	}
+
+	blendWorldMaterialsMore();
+
+	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+	{
+		pProcMeshComponent->UpdateMeshSection_LinearColor(i, pChunkMap->vChunks[i]->vVertices, pChunkMap->vChunks[i]->vNormals,
+			pChunkMap->vChunks[i]->vUV0, pChunkMap->vChunks[i]->vVertexColors, pChunkMap->vChunks[i]->vTangents);
 	}
 
 
@@ -154,8 +163,8 @@ void AFWGen::GenerateWorld()
 	));
 
 	WaterPlane->SetWorldScale3D(FVector(
-		((ChunkPieceColumnCount) * ChunkPieceSizeX) * (WaterSize / 100.0f),
-		((ChunkPieceRowCount) * ChunkPieceSizeY) * (WaterSize / 100.0f),
+		((ChunkPieceColumnCount)*ChunkPieceSizeX) * (WaterSize / 100.0f),
+		((ChunkPieceRowCount)*ChunkPieceSizeY) * (WaterSize / 100.0f),
 		0.1f
 	));
 
@@ -173,6 +182,110 @@ void AFWGen::GenerateWorld()
 		WaterPlane->SetVisibility(false);
 	}
 }
+
+void AFWGen::blendWorldMaterialsMore()
+{
+	std::mt19937_64 gen(std::random_device{}());
+	std::uniform_real_distribution<float> urd(0.0f, 1.0f);
+
+	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+	{
+		size_t iVertexIndex = 0;
+
+		for (size_t iRow = 0; iRow < ChunkPieceRowCount + 1; iRow++)
+		{
+			iVertexIndex = (ChunkPieceColumnCount + 1) * iRow;
+
+			size_t iSkipPoints = 0;
+
+			for (size_t iColumn = 0; iColumn < ChunkPieceColumnCount + 1; iColumn++)
+			{
+				if (iSkipPoints > 0)
+				{
+					iSkipPoints--;
+					iVertexIndex++;
+
+					continue;
+				}
+
+				if ((iRow >= 3) && ((iRow + 3) < (ChunkPieceRowCount + 1))
+					&& (iColumn >= 3) && ((iColumn + 3) < (ChunkPieceColumnCount + 1)))
+				{
+					if (SecondMaterialUnderWater &&
+						(pChunkMap->vChunks[i]->vVertices[iVertexIndex].Z <= (GetActorLocation().Z + (GenerationMaxZFromActorZ * (ZWaterLevelInWorld + 0.01f)))))
+					{
+						// Under water material - don't touch.
+					}
+					else
+					{
+						bool bFirstLayerWithOtherColor  = false;
+						bool bSecondLayerWithOtherColor = false;
+						bool bThirdLayerWithOtherColor  = false;
+
+						if ((pChunkMap->vChunks[i]->vLayerIndex[iVertexIndex] == 1)
+							&& (areEqual(pChunkMap->vChunks[i]->vVertexColors[iVertexIndex].A, 0.0f, 0.1f) == false))
+						{
+							bFirstLayerWithOtherColor = true;
+						}
+						else if ((pChunkMap->vChunks[i]->vLayerIndex[iVertexIndex] == 2)
+							&& (areEqual(pChunkMap->vChunks[i]->vVertexColors[iVertexIndex].A, 0.5f, 0.1f) == false))
+						{
+							bSecondLayerWithOtherColor = true;
+						}
+						else if ((pChunkMap->vChunks[i]->vLayerIndex[iVertexIndex] == 3)
+							&& (areEqual(pChunkMap->vChunks[i]->vVertexColors[iVertexIndex].A, 1.0f, 0.1f) == false))
+						{
+							bThirdLayerWithOtherColor = true;
+						}
+
+
+						if (bFirstLayerWithOtherColor || bSecondLayerWithOtherColor || bThirdLayerWithOtherColor)
+						{
+							// Add a little more of other color.
+
+							// . . . . .
+							// . . . . .
+							// . . + . .  <- we are in the center.
+							// . . . . .
+							// . . . . .
+
+							// Close square:
+
+							for (int32 iIndexY = -(ChunkPieceColumnCount + 1); iIndexY <= (ChunkPieceColumnCount + 1); iIndexY += (ChunkPieceColumnCount + 1))
+							{
+								for (int32 iIndexX = -1; iIndexX <= 1; iIndexX++)
+								{
+									if (urd(gen) <= IncreasedMaterialBlendProbability)
+									{
+										pChunkMap->vChunks[i]->vVertexColors[iVertexIndex + iIndexY + iIndexX] = pChunkMap->vChunks[i]->vVertexColors[iVertexIndex];
+									}
+								}
+							}
+
+							// Far square:
+
+							for (int32 iIndexY = -((ChunkPieceColumnCount + 1) * 2 - 1); iIndexY <= ((ChunkPieceColumnCount + 1) * 2 - 1); iIndexY += (ChunkPieceColumnCount + 1))
+							{
+								for (int32 iIndexX = -2; iIndexX <= 2; iIndexX++)
+								{
+									if (urd(gen) <= (IncreasedMaterialBlendProbability / 2))
+									{
+										pChunkMap->vChunks[i]->vVertexColors[iVertexIndex + iIndexY + iIndexX] = pChunkMap->vChunks[i]->vVertexColors[iVertexIndex];
+									}
+								}
+							}
+
+							iSkipPoints = 2;
+						}
+					}
+				}
+				
+				iVertexIndex++;
+			}
+		}
+	}
+}
+
 
 #if WITH_EDITOR
 void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -229,6 +342,11 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 		if ((ThirdMaterialOnSecondProbability < 0.0f) || (ThirdMaterialOnSecondProbability > 1.0f))
 		{
 			ThirdMaterialOnSecondProbability = 0.01f;
+		}
+
+		if ((IncreasedMaterialBlendProbability < 0.0f) || (IncreasedMaterialBlendProbability > 1.0f))
+		{
+			IncreasedMaterialBlendProbability = 0.0f;
 		}
 
 
@@ -885,8 +1003,6 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 
 	FVector vPrevLocation(fStartX, fStartY, GetActorLocation().Z);
 
-	float fInterval = GenerationMaxZFromActorZ - GetActorLocation().Z;
-
 
 
 
@@ -913,10 +1029,6 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 
 			if (InvertWorld)
 			{
-				// Here return value from perlinNoise.octaveNoise0_1 can be
-				// 0    , but should be   1
-				// 1    , but should be   0
-
 				generatedValue = 1.0 - generatedValue;
 			}
 
@@ -927,27 +1039,6 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 
 
 
-
-			// Set "material" to vertex
-
-			float fAlphaColor = 0.0f;
-
-			float fAlphaColorWithoutRnd = 0.0f;
-
-			if ((i == 0) || (i == iCorrectedRowCount - 1) || (j == 0) || (j == iCorrectedColumnCount - 1))
-			{
-				fAlphaColor = pickVertexMaterial(generatedValue, false, &urd, &rnd, &fAlphaColorWithoutRnd);
-			}
-			else
-			{
-				fAlphaColor = pickVertexMaterial(generatedValue, true, &urd, &rnd, &fAlphaColorWithoutRnd);
-			}
-
-
-
-			pNewChunk->vVertexColors .Add(FLinearColor(0.0f, 0.0f, 0.0f, fAlphaColor));
-
-
 			// Set vertex Z
 
 			// Here return value from perlinNoise.octaveNoise0_1 can be
@@ -955,26 +1046,53 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 			// ...  , but should be   value from interval [GetActorLocation().Z; GenerationMaxZFromActorZ]
 			// 1    , but should be   GenerationMaxZFromActorZ
 
-			if (fAlphaColorWithoutRnd < 0.1f)
+			vPrevLocation.Z = GetActorLocation().Z + (GenerationMaxZFromActorZ * generatedValue);
+
+			pNewChunk->vVertices .Add (vPrevLocation);
+
+
+
+			// Set "material" to vertex
+
+			float fAlphaColor = 0.0f;
+
+			float fAlphaColorWithoutRnd = 0.0f;
+
+			if (SecondMaterialUnderWater && (generatedValue < ZWaterLevelInWorld))
+			{
+				fAlphaColor = 0.5f;
+				fAlphaColorWithoutRnd = 0.5f;
+			}
+			else
+			{
+				if ((i == 0) || (i == iCorrectedRowCount - 1) || (j == 0)|| (j == iCorrectedColumnCount - 1))
+				{
+					fAlphaColor = pickVertexMaterial(generatedValue, false, &urd, &rnd, &fAlphaColorWithoutRnd);
+				}
+				else
+				{
+					fAlphaColor = pickVertexMaterial(generatedValue, true, &urd, &rnd, &fAlphaColorWithoutRnd);
+				}
+			}
+
+			pNewChunk->vVertexColors .Add(FLinearColor(0.0f, 0.0f, 0.0f, fAlphaColor));
+
+			if (areEqual(fAlphaColorWithoutRnd, 0.0f, 0.1f))
 			{
 				// First Layer
 
-				vPrevLocation.Z = GetActorLocation().Z + (fInterval * generatedValue) * FirstLayerReliefStrength;
+				pNewChunk->vLayerIndex.push_back(1);
 			}
-			else if (fAlphaColorWithoutRnd < 0.6f)
+			else if (areEqual(fAlphaColorWithoutRnd, 0.5f, 0.1f))
 			{
 				// Second Layer
-
-				vPrevLocation.Z = GetActorLocation().Z + (fInterval * generatedValue) * SecondLayerReliefStrength;
+				pNewChunk->vLayerIndex.push_back(2);
 			}
 			else
 			{
 				// Third Layer
-
-				vPrevLocation.Z = GetActorLocation().Z + (fInterval * generatedValue) * ThirdLayerReliefStrength;
+				pNewChunk->vLayerIndex.push_back(3);
 			}
-
-			pNewChunk->vVertices .Add (vPrevLocation);
 
 
 
@@ -1073,17 +1191,26 @@ void AFWGen::refreshPreview()
 }
 #endif // WITH_EDITOR
 
-void AFWGen::SetFirstLayerReliefStrength(float NewFirstLayerReliefStrength)
+bool AFWGen::areEqual(float a, float b, float eps)
 {
-	FirstLayerReliefStrength = NewFirstLayerReliefStrength;
+	return fabs(a - b) < eps;
 }
 
-void AFWGen::SetSecondLayerReliefStrength(float NewSecondLayerReliefStrength)
+void AFWGen::SetSecondMaterialUnderWater(bool NewSecondMaterialUnderWater)
 {
-	SecondLayerReliefStrength = NewSecondLayerReliefStrength;
+	SecondMaterialUnderWater = NewSecondMaterialUnderWater;
 }
 
-void AFWGen::SetThirdLayerReliefStrength(float NewThirdLayerReliefStrength)
+bool AFWGen::SetIncreasedMaterialBlendProbability(float NewIncreasedMaterialBlendProbability)
 {
-	ThirdLayerReliefStrength = NewThirdLayerReliefStrength;
+	if (NewIncreasedMaterialBlendProbability < 0.0f || NewIncreasedMaterialBlendProbability > 1.0f)
+	{
+		return true;
+	}
+	else
+	{
+		IncreasedMaterialBlendProbability = NewIncreasedMaterialBlendProbability;
+
+		return false;
+	}
 }
