@@ -143,7 +143,15 @@ void AFWGen::GenerateWorld()
 		pChunkMap->addChunk(generateChunk(0, 0, 0));
 	}
 
-	blendWorldMaterialsMore();
+	if (ApplyGroundMaterialBlend)
+	{
+		blendWorldMaterialsMore();
+	}
+	
+	if (ApplySlopeDependentBlend)
+	{
+		applySlopeDependentBlend();
+	}
 
 	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
 	{
@@ -212,7 +220,7 @@ void AFWGen::blendWorldMaterialsMore()
 					&& (iColumn >= 3) && ((iColumn + 3) < (ChunkPieceColumnCount + 1)))
 				{
 					if (SecondMaterialUnderWater &&
-						(pChunkMap->vChunks[i]->vVertices[iVertexIndex].Z <= (GetActorLocation().Z + (GenerationMaxZFromActorZ * (ZWaterLevelInWorld + 0.01f)))))
+						(pChunkMap->vChunks[i]->vVertices[iVertexIndex].Z <= (GetActorLocation().Z + (GenerationMaxZFromActorZ * (ZWaterLevelInWorld + 0.008f)))))
 					{
 						// Under water material - don't touch.
 					}
@@ -280,6 +288,105 @@ void AFWGen::blendWorldMaterialsMore()
 					}
 				}
 				
+				iVertexIndex++;
+			}
+		}
+	}
+}
+
+void AFWGen::applySlopeDependentBlend()
+{
+	float fSteepSlopeMinHeightDiff = GenerationMaxZFromActorZ * MinSlopeHeightMultiplier;
+
+	for (size_t iChunk = 0; iChunk < pChunkMap->vChunks.size(); iChunk++)
+	{
+		std::vector<bool> vProcessedVertices(pChunkMap->vChunks[iChunk]->vVertices.Num());
+		vProcessedVertices[0] = true;
+
+		size_t iVertexIndex = 0;
+
+		for (size_t iRow = 0; iRow < ChunkPieceRowCount + 1; iRow++)
+		{
+			for (size_t iColumn = 0; iColumn < ChunkPieceColumnCount + 1; iColumn++)
+			{
+				if (((iRow < 2) || (iRow > ChunkPieceRowCount - 3))
+					|| ((iColumn < 2) || (iColumn > ChunkPieceColumnCount - 3)))
+				{
+					iVertexIndex++;
+					continue;
+				}
+
+				bool bHasLeftPoints  = true;
+				bool bHasTopPoints   = true;
+				bool bHasRightPoints = true;
+				bool bHasDownPoints  = true;
+
+				if (iRow == 0)
+				{
+					bHasTopPoints = false;
+				}
+
+				if (iRow == ChunkPieceRowCount)
+				{
+					bHasDownPoints = false;
+				}
+
+				if (iColumn == 0)
+				{
+					bHasLeftPoints = false;
+				}
+
+				if (iColumn == ChunkPieceColumnCount)
+				{
+					bHasRightPoints = false;
+				}
+
+				float fCurrentVertexZ = pChunkMap->vChunks[iChunk]->vVertices[iVertexIndex].Z;
+
+				// Process the left points:
+				if (bHasLeftPoints)
+				{
+					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - 1, fSteepSlopeMinHeightDiff);
+
+					if (bHasTopPoints)
+					{
+						compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - 1 - (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+					}
+
+					if (bHasDownPoints)
+					{
+						compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - 1 + (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+					}
+				}
+
+				// Process the right points:
+				if (bHasRightPoints)
+				{
+					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1, fSteepSlopeMinHeightDiff);
+
+					if (bHasTopPoints)
+					{
+						compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1 - (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+					}
+
+					if (bHasDownPoints)
+					{
+						compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1 + (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+					}
+				}
+
+				// Top point:
+				if (bHasTopPoints)
+				{
+					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+				}
+
+				// Down point:
+				if (bHasDownPoints)
+				{
+					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+				}
+
 				iVertexIndex++;
 			}
 		}
@@ -1020,6 +1127,9 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 
 	// Generation
 
+	float fMaxGeneratedZ = GetActorLocation().Z;
+	size_t iMaxGeneratedZIndex = 0;
+
 	for (int32 i = 0; i < iCorrectedRowCount; i++)
 	{
 		for (int32 j = 0; j < iCorrectedColumnCount; j++)
@@ -1048,6 +1158,12 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 
 			vPrevLocation.Z = GetActorLocation().Z + (GenerationMaxZFromActorZ * generatedValue);
 
+			if (vPrevLocation.Z > fMaxGeneratedZ)
+			{
+				fMaxGeneratedZ = vPrevLocation.Z;
+				iMaxGeneratedZIndex = pNewChunk->vVertices.Num();
+			}
+
 			pNewChunk->vVertices .Add (vPrevLocation);
 
 
@@ -1058,7 +1174,7 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 
 			float fAlphaColorWithoutRnd = 0.0f;
 
-			if (SecondMaterialUnderWater && (generatedValue < ZWaterLevelInWorld))
+			if (SecondMaterialUnderWater && (generatedValue < (ZWaterLevelInWorld + 0.005f)))
 			{
 				fAlphaColor = 0.5f;
 				fAlphaColorWithoutRnd = 0.5f;
@@ -1137,6 +1253,8 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 		vPrevLocation.Set(fStartX, vPrevLocation.Y + ChunkPieceSizeY, GetActorLocation().Z);
 	}
 
+	pNewChunk->iMaxZVertexIndex = iMaxGeneratedZIndex;
+
 	pProcMeshComponent->CreateMeshSection_LinearColor(iSectionIndex, pNewChunk->vVertices, pNewChunk->vTriangles, pNewChunk->vNormals,
 		pNewChunk->vUV0, pNewChunk->vVertexColors, pNewChunk->vTangents, true);
 
@@ -1196,6 +1314,20 @@ bool AFWGen::areEqual(float a, float b, float eps)
 	return fabs(a - b) < eps;
 }
 
+
+void AFWGen::compareHeightDifference(FWGenChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff)
+{
+	if (vProcessedVertices[iCompareToIndex] == false)
+	{
+		if (fabs(pChunk->vVertices[iCompareToIndex].Z - fCurrentZ) > fSteepSlopeMinHeightDiff)
+		{
+			pChunk->vVertexColors[iCompareToIndex] = FLinearColor(0.0f, 0.0f, 0.0f, 0.5f);
+		}
+
+		vProcessedVertices[iCompareToIndex] = true;
+	}
+}
+
 void AFWGen::SetSecondMaterialUnderWater(bool NewSecondMaterialUnderWater)
 {
 	SecondMaterialUnderWater = NewSecondMaterialUnderWater;
@@ -1210,6 +1342,30 @@ bool AFWGen::SetIncreasedMaterialBlendProbability(float NewIncreasedMaterialBlen
 	else
 	{
 		IncreasedMaterialBlendProbability = NewIncreasedMaterialBlendProbability;
+
+		return false;
+	}
+}
+
+void AFWGen::SetApplyGroundMaterialBlend(bool bApply)
+{
+	ApplyGroundMaterialBlend = bApply;
+}
+
+void AFWGen::SetApplySlopeDependentBlend(bool bApply)
+{
+	ApplySlopeDependentBlend = bApply;
+}
+
+bool AFWGen::SetMinSlopeHeightMultiplier(float NewMinSlopeHeightMultiplier)
+{
+	if (NewMinSlopeHeightMultiplier < 0.0f || NewMinSlopeHeightMultiplier > 1.0f)
+	{
+		return true;
+	}
+	else
+	{
+		MinSlopeHeightMultiplier = NewMinSlopeHeightMultiplier;
 
 		return false;
 	}

@@ -39,6 +39,12 @@ You can configure the generator's parameters in the details tab (or through the 
     <li><b>Material Height Max Deviation</b> (valid values range: [0.0, 1.0]) - this is a possible deviation from values set to the "First Material Max Relative Height" and the "Second Material Max Relative Height". For example, if the "First Material Max Relative Height" is set to 0.5 and the "Material Height Max Deviation" is set to 0.1, then for every vertex of terrain value 0.5 can vary from 0.4 to 0.6.</li>
 </ul>
 
+<h3>Additional Steps</h3>
+<ul>
+    <li><b>Apply Ground Material Blend</b> - determines if the parameters from Ground Material Blend should be applied.</li>
+    <li><b>Apply Slope Dependent Blend</b> - determines if the parameters from Slope Dependent Blend should be applied.</li>
+</ul>
+
 <h3>Ground Material Blend</h3>
 <ul>
     <li><b>First Material On Second Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of first material appearance on the second material for a vertices.</li>
@@ -48,6 +54,11 @@ You can configure the generator's parameters in the details tab (or through the 
     <li><b>Third Material On First Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of third material appearance on the first material for a vertices.</li>
     <li><b>Third Material On Second Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of third material appearance on the second material for a vertices.</li>
     <li><b>Increased Material Blend Probability</b> (valid values range: [0.0, 1.0]) - determines the probability of that materials on other materials will be bigger.</li>
+</ul>
+
+<h3>Slope Dependent Blend</h3>
+<ul>
+    <li><b>Min Slope Height Multiplier</b> (valid values range: [0.0, 1.0]) - defines the minimum height difference between two close vertices as (GenerationMaxZFromActorZ * this value) for which the second material will be applied. You usually should keep this value pretty low but not too low.</li>
 </ul>
 
 <h3>Water</h3>

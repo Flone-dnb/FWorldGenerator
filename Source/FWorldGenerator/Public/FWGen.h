@@ -118,6 +118,17 @@ public:
 			bool SetIncreasedMaterialBlendProbability(float NewIncreasedMaterialBlendProbability);
 
 
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Additional Steps")
+			void SetApplyGroundMaterialBlend(bool bApply);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Additional Steps")
+			void SetApplySlopeDependentBlend(bool bApply);
+
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Slope Dependent Blend")
+			bool SetMinSlopeHeightMultiplier(float NewMinSlopeHeightMultiplier);
+
+
 
 		// Water
 
@@ -150,10 +161,10 @@ public:
 #endif // WITH_EDITOR
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		int32 ChunkPieceRowCount = 150;
+		int32 ChunkPieceRowCount = 300;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		int32 ChunkPieceColumnCount = 150;
+		int32 ChunkPieceColumnCount = 300;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
 		float ChunkPieceSizeX = 300.0f;
@@ -168,10 +179,10 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		float GenerationFrequency = 0.42f;
+		float GenerationFrequency = 0.65f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		int32 GenerationOctaves = 6;
+		int32 GenerationOctaves = 7;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
 		int32 GenerationSeed = 0;
@@ -184,14 +195,8 @@ public:
 
 
 
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World")
 		int32 WorldSize = 0;
-	// 0   ---  infinite
-	// -1  ---  only 1 chunk
-	// 1   ---  only 1 ViewDistance size
-	// 2   ---  only 2 ViewDistance sizes
-
 
 
 
@@ -206,6 +211,15 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
 		float MaterialHeightMaxDeviation = 0.08f;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Additional Steps")
+		bool ApplyGroundMaterialBlend = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Additional Steps")
+		bool ApplySlopeDependentBlend = true;
+
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
 		float FirstMaterialOnSecondProbability = 0.02f;
@@ -227,6 +241,11 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground Material Blend")
 		float IncreasedMaterialBlendProbability = 0.16f;
+
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slope Dependent Blend")
+		float MinSlopeHeightMultiplier = 0.006f;
 
 
 
@@ -275,8 +294,11 @@ private:
 	void generateSeed();
 	float pickVertexMaterial(double height, bool bApplyRND, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
 	void blendWorldMaterialsMore();
+	void applySlopeDependentBlend();
 
 	bool areEqual(float a, float b, float eps);
+
+	void compareHeightDifference(FWGenChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff);
 
 #if WITH_EDITOR
 	void refreshPreview();
@@ -354,6 +376,8 @@ public:
 	TArray<FVector>           vNormals;
 	TArray<FVector2D>         vUV0;
 	std::vector<int32>        vLayerIndex;
+
+	size_t                    iMaxZVertexIndex;
 
 private:
 
