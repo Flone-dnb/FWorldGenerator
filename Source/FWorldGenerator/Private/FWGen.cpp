@@ -123,6 +123,16 @@ void AFWGen::GenerateWorld()
 
 	if (WorldSize != -1)
 	{
+		size_t iChunkCount = (ViewDistance * 2 + 1) * (ViewDistance * 2 + 1);
+		std::vector<std::promise<bool>> vPromiseThreads(iChunkCount);
+		std::vector<std::future<bool>> vFutureThreads;
+
+		for (size_t i = 0; i < iChunkCount; i++)
+		{
+			vFutureThreads.push_back(vPromiseThreads[i].get_future());
+		}
+
+
 		// Generate the chunks.
 
 		int32 iSectionIndex = 0;
@@ -132,15 +142,47 @@ void AFWGen::GenerateWorld()
 		{
 			for (long long x = -ViewDistance; x < ViewDistance + 1; x++)
 			{
-				pChunkMap->addChunk(generateChunk(x, y, iSectionIndex));
+				std::thread tGenerateChunk(&AFWGen::generateChunk, this, std::move(vPromiseThreads[iSectionIndex]), x, y, iSectionIndex);
+				tGenerateChunk.detach();
 
 				iSectionIndex++;
 			}
 		}
+
+		for (size_t i = 0; i < vFutureThreads.size(); i++)
+		{
+			vFutureThreads[i].get();
+		}
+
+		std::sort(pChunkMap->vChunks.begin(), pChunkMap->vChunks.end(), [](FWGenChunk* chunk1, FWGenChunk* chunk2) -> bool
+			{
+				return chunk1->iSectionIndex < chunk2->iSectionIndex ? true : false;
+			});
+
+		for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+		{
+			pProcMeshComponent->CreateMeshSection_LinearColor(pChunkMap->vChunks[i]->iSectionIndex, pChunkMap->vChunks[i]->vVertices, pChunkMap->vChunks[i]->vTriangles,
+				pChunkMap->vChunks[i]->vNormals, pChunkMap->vChunks[i]->vUV0, pChunkMap->vChunks[i]->vVertexColors,
+				pChunkMap->vChunks[i]->vTangents, true);
+
+			// Set material
+			if (GroundMaterial)
+			{
+				pProcMeshComponent->SetMaterial(pChunkMap->vChunks[i]->iSectionIndex, GroundMaterial);
+			}
+
+			pChunkMap->vChunks[i]->setMeshSection(pProcMeshComponent->GetProcMeshSection(pChunkMap->vChunks[i]->iSectionIndex));
+		}
 	}
 	else
 	{
-		pChunkMap->addChunk(generateChunk(0, 0, 0));
+		std::promise<bool> promise;
+		std::future<bool> future = promise.get_future();
+
+		std::thread tGenerateChunk(&AFWGen::generateChunk, this, std::move(promise), 0, 0, 0);
+		tGenerateChunk.detach();
+
+		future.get();
 	}
 
 	if (ApplyGroundMaterialBlend)
@@ -152,6 +194,7 @@ void AFWGen::GenerateWorld()
 	{
 		applySlopeDependentBlend();
 	}
+	
 
 	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
 	{
@@ -362,17 +405,17 @@ void AFWGen::applySlopeDependentBlend()
 				// Process the right points:
 				if (bHasRightPoints)
 				{
-					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1, fSteepSlopeMinHeightDiff);
+				compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1, fSteepSlopeMinHeightDiff);
 
-					if (bHasTopPoints)
-					{
-						compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1 - (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
-					}
+				if (bHasTopPoints)
+				{
+					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1 - (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+				}
 
-					if (bHasDownPoints)
-					{
-						compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1 + (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
-					}
+				if (bHasDownPoints)
+				{
+					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1 + (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+				}
 				}
 
 				// Top point:
@@ -392,7 +435,6 @@ void AFWGen::applySlopeDependentBlend()
 		}
 	}
 }
-
 
 #if WITH_EDITOR
 void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -1057,7 +1099,7 @@ float AFWGen::pickVertexMaterial(double height, bool bApplyRND, std::uniform_rea
 	return fVertexColor;
 }
 
-FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex)
+void AFWGen::generateChunk(std::promise<bool>&& promise, long long iX, long long iY, int32 iSectionIndex)
 {
 	// Generation setup
 
@@ -1255,18 +1297,20 @@ FWGenChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionInde
 
 	pNewChunk->iMaxZVertexIndex = iMaxGeneratedZIndex;
 
-	pProcMeshComponent->CreateMeshSection_LinearColor(iSectionIndex, pNewChunk->vVertices, pNewChunk->vTriangles, pNewChunk->vNormals,
-		pNewChunk->vUV0, pNewChunk->vVertexColors, pNewChunk->vTangents, true);
+	//pProcMeshComponent->CreateMeshSection_LinearColor(iSectionIndex, pNewChunk->vVertices, pNewChunk->vTriangles, pNewChunk->vNormals,
+	//	pNewChunk->vUV0, pNewChunk->vVertexColors, pNewChunk->vTangents, true);
 
-	// Set material
-	if (GroundMaterial)
-	{
-		pProcMeshComponent->SetMaterial(iSectionIndex, GroundMaterial);
-	}
+	//// Set material
+	//if (GroundMaterial)
+	//{
+	//	pProcMeshComponent->SetMaterial(iSectionIndex, GroundMaterial);
+	//}
 
-	pNewChunk->setMeshSection(pProcMeshComponent->GetProcMeshSection(iSectionIndex));
+	//pNewChunk->setMeshSection(pProcMeshComponent->GetProcMeshSection(iSectionIndex));
 
-	return pNewChunk;
+	pChunkMap->addChunk(pNewChunk);
+
+	promise.set_value(true);
 }
 
 #if WITH_EDITOR
@@ -1370,3 +1414,4 @@ bool AFWGen::SetMinSlopeHeightMultiplier(float NewMinSlopeHeightMultiplier)
 		return false;
 	}
 }
+

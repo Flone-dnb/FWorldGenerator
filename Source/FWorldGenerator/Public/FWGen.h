@@ -13,6 +13,8 @@
 // STL
 #include <vector>
 #include <random>
+#include <future>
+#include <thread>
 
 #include "FWGen.generated.h"
 
@@ -118,18 +120,6 @@ public:
 			bool SetIncreasedMaterialBlendProbability(float NewIncreasedMaterialBlendProbability);
 
 
-		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Additional Steps")
-			void SetApplyGroundMaterialBlend(bool bApply);
-
-		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Additional Steps")
-			void SetApplySlopeDependentBlend(bool bApply);
-
-
-		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Slope Dependent Blend")
-			bool SetMinSlopeHeightMultiplier(float NewMinSlopeHeightMultiplier);
-
-
-
 		// Water
 
 		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Water")
@@ -146,6 +136,19 @@ public:
 
 		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Water")
 			void SetWaterMaterial(UMaterialInterface* NewWaterMaterial);
+
+
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Additional Steps")
+			void SetApplyGroundMaterialBlend(bool bApply);
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Additional Steps")
+			void SetApplySlopeDependentBlend(bool bApply);
+
+
+
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Slope Dependent Blend")
+			bool SetMinSlopeHeightMultiplier(float NewMinSlopeHeightMultiplier);
 
 
 #if WITH_EDITOR
@@ -179,7 +182,7 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		float GenerationFrequency = 0.65f;
+		float GenerationFrequency = 0.6f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
 		int32 GenerationOctaves = 7;
@@ -211,6 +214,24 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
 		float MaterialHeightMaxDeviation = 0.08f;
+
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+		bool  CreateWater = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+		bool  SecondMaterialUnderWater = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+		float ZWaterLevelInWorld = 0.25f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+		int32 WaterSize = 10;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+		UMaterialInterface* WaterMaterial;
+
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Additional Steps")
@@ -247,25 +268,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slope Dependent Blend")
 		float MinSlopeHeightMultiplier = 0.006f;
 
-
-
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
-		bool  CreateWater = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
-		bool  SecondMaterialUnderWater = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
-		float ZWaterLevelInWorld = 0.25f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
-		int32 WaterSize = 10;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
-		UMaterialInterface* WaterMaterial;
-
-
 protected:
 
 	virtual void BeginPlay() override;
@@ -290,15 +292,14 @@ protected:
 
 private:
 
-	FWGenChunk* generateChunk(long long iX, long long iY, int32 iSectionIndex);
-	void generateSeed();
-	float pickVertexMaterial(double height, bool bApplyRND, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
-	void blendWorldMaterialsMore();
-	void applySlopeDependentBlend();
+	void  generateChunk            (std::promise<bool>&& promise, long long iX, long long iY, int32 iSectionIndex);
+	void  generateSeed             ();
+	float pickVertexMaterial       (double height, bool bApplyRND, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
+	void  blendWorldMaterialsMore  ();
+	void  applySlopeDependentBlend ();
 
-	bool areEqual(float a, float b, float eps);
-
-	void compareHeightDifference(FWGenChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff);
+	bool areEqual                  (float a, float b, float eps);
+	void compareHeightDifference   (FWGenChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff);
 
 #if WITH_EDITOR
 	void refreshPreview();
@@ -378,9 +379,6 @@ public:
 	std::vector<int32>        vLayerIndex;
 
 	size_t                    iMaxZVertexIndex;
-
-private:
-
 
 	long long                 iX;
 	long long                 iY;
