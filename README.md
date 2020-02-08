@@ -39,6 +39,15 @@ You can configure the generator's parameters in the details tab (or through the 
     <li><b>Material Height Max Deviation</b> (valid values range: [0.0, 1.0]) - this is a possible deviation from values set to the "First Material Max Relative Height" and the "Second Material Max Relative Height". For example, if the "First Material Max Relative Height" is set to 0.5 and the "Material Height Max Deviation" is set to 0.1, then for every vertex of terrain value 0.5 can vary from 0.4 to 0.6.</li>
 </ul>
 
+<h3>Water</h3>
+<ul>
+    <li><b>Create Water</b> - determines is the world should be spawned in the water.</li>
+    <li><b>Second Material Under Water</b> - determines if the underwater ground should have second material.</li>
+    <li><b>Z Water Level in World</b> (valid values range: [0.0, 1.0]) - determines the water height from actor's Z, from 0.0 to 1.0, where 0.0 - actor's Z and 1.0 - Generation Max Z From Actor Z.</li>
+    <li><b>Water Size</b> (valid values range: [1, ...]) - determines the size of the water in chunks.</li>
+    <li><b>Water Material</b> - determines the material which the water will have.</li>
+</ul>
+
 <h3>Additional Steps</h3>
 <ul>
     <li><b>Apply Ground Material Blend</b> - determines if the parameters from Ground Material Blend should be applied.</li>
@@ -59,15 +68,6 @@ You can configure the generator's parameters in the details tab (or through the 
 <h3>Slope Dependent Blend</h3>
 <ul>
     <li><b>Min Slope Height Multiplier</b> (valid values range: [0.0, 1.0]) - defines the minimum height difference between two close vertices as (GenerationMaxZFromActorZ * this value) for which the second material will be applied. You usually should keep this value pretty low but not too low.</li>
-</ul>
-
-<h3>Water</h3>
-<ul>
-    <li><b>Create Water</b> - determines is the world should be spawned in the water.</li>
-    <li><b>Second Material Under Water</b> - determines if the underwater ground should have second material.</li>
-    <li><b>Z Water Level in World</b> (valid values range: [0.0, 1.0]) - determines the water height from actor's Z, from 0.0 to 1.0, where 0.0 - actor's Z and 1.0 - Generation Max Z From Actor Z.</li>
-    <li><b>Water Size</b> (valid values range: [1, ...]) - determines the size of the water in chunks.</li>
-    <li><b>Water Material</b> - determines the material which the water will have.</li>
 </ul>
 
 # Terrain Material
