@@ -107,6 +107,11 @@ public:
 		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
 			bool SetMaterialHeightMaxDeviation(float NewMaterialHeightMaxDeviation);
 
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground")
+			bool SetTerrainCutHeightFromActorZ(float NewTerrainCutHeightFromActorZ);
+
+
+
 		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Ground Material Blend")
 			bool SetFirstMaterialOnOtherProbability(float FirstOnSecond, float FirstOnThird);
 
@@ -214,6 +219,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
 		float MaterialHeightMaxDeviation = 0.08f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
+		float TerrainCutHeightFromActorZ = 1.0f;
 
 
 

@@ -461,8 +461,14 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, SecondMaterialOnThirdProbability)
 		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ThirdMaterialOnFirstProbability)
 		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ThirdMaterialOnSecondProbability)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, TerrainCutHeightFromActorZ)
 		)
 	{
+		if ((TerrainCutHeightFromActorZ > 1.0f) || (TerrainCutHeightFromActorZ < 0.0f))
+		{
+			TerrainCutHeightFromActorZ = 1.0f;
+		}
+
 		if ((FirstMaterialOnSecondProbability < 0.0f) || (FirstMaterialOnSecondProbability > 1.0f))
 		{
 			FirstMaterialOnSecondProbability = 0.01f;
@@ -808,6 +814,19 @@ bool AFWGen::SetMaterialHeightMaxDeviation(float NewMaterialHeightMaxDeviation)
 	{
 		MaterialHeightMaxDeviation = NewMaterialHeightMaxDeviation;
 
+		return false;
+	}
+}
+
+bool AFWGen::SetTerrainCutHeightFromActorZ(float NewTerrainCutHeightFromActorZ)
+{
+	if ((NewTerrainCutHeightFromActorZ > 1.0f) || (NewTerrainCutHeightFromActorZ < 0.0f))
+	{
+		return true;
+	}
+	else
+	{
+		TerrainCutHeightFromActorZ = NewTerrainCutHeightFromActorZ;
 		return false;
 	}
 }
@@ -1178,6 +1197,11 @@ void AFWGen::generateChunk(std::promise<bool>&& promise, long long iX, long long
 		{
 			// Generate vertex
 			double generatedValue = perlinNoise.octaveNoise0_1(vPrevLocation.X / fx, vPrevLocation.Y / fy, GenerationOctaves);
+
+			if (generatedValue > TerrainCutHeightFromActorZ)
+			{
+				generatedValue = TerrainCutHeightFromActorZ;
+			}
 
 			if (InvertWorld)
 			{
