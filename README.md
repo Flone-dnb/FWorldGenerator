@@ -6,6 +6,7 @@ You can configure the generator's parameters in the details tab (or through the 
 <h3>Preview</h3>
 <ul>
     <li><b>Complex Preview</b> - generates one part of the world (every time a parameter is changed) as an example of how it's gonna look.</li>
+    <li><b>Draw Chunk Bounds</b> - draws bounds of the chunks if enabled. This could be useful to see triggers (see Load Unload Chunk Max Z parameter). Only works if the Complex Preview is enabled or if the game is started. Will not work if you have only 1 chunk.</li>
 </ul>
 
 <h3>Chunks</h3>
@@ -15,6 +16,7 @@ You can configure the generator's parameters in the details tab (or through the 
     <li><b>Chunk Piece Size X</b> (valid values range: [0.5, ...]) - determines the size of one chunk piece by the x-axis.</li>
     <li><b>Chunk Piece Size Y</b> (valid values range: [0.5, ...]) - determines the size of one chunk piece by the y-axis.</li>
     <li><b>View Distance</b> (valid values range: [1, ...]) - determines how much chunks will be always loaded. For example: ViewDistance == 1  ---  Always loaded chunks: 3x3, ViewDistance == 2  ---  Always loaded chunks: 5x5. And so on... The player is always in the central chunk.</li>
+    <li><b>Load Unload Chunk Max Z</b> - every chunk has an invisible trigger box which determines if the player has entered another chunk, and if he did then we need to unload far chunks and load new ones. This parameter determines the max Z coordinate of this trigger box. If your player can fly very high make sure to set this value pretty high because at some point he can fly over this trigger box and new chunks will not load. You can see every chunk's trigger box if you use DrawChunkBounds option.</li>
 </ul>
 
 <h3>Generation</h3>

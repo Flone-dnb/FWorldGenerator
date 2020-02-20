@@ -17,6 +17,10 @@
 
 #include "Components/StaticMeshComponent.h"
 
+#if WITH_EDITOR
+#include "DrawDebugHelpers.h"
+#endif // WITH_EDITOR
+
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------
@@ -25,7 +29,11 @@
 
 AFWGen::AFWGen()
 {
+#if WITH_EDITOR
+	PrimaryActorTick.bCanEverTick = true;
+#else
 	PrimaryActorTick.bCanEverTick = false;
+#endif
 	bWorldCreated                 = false;
 
 
@@ -44,7 +52,7 @@ AFWGen::AFWGen()
 
 	pProcMeshComponent = CreateDefaultSubobject<UProceduralMeshComponent>("ProcMeshComp");
 	//pProcMeshComponent->bUseAsyncCooking = true;  // commented because the world should be generated after GenerateWorld() returned, and not calculate something after the function returned.
-	pProcMeshComponent->RegisterComponent();
+	//pProcMeshComponent->RegisterComponent();
 	pProcMeshComponent->SetupAttachment(RootComponent);
 
 	// Enable collision
@@ -66,6 +74,8 @@ AFWGen::AFWGen()
 	WaterPlane->SetStaticMesh(PlaneMeshAsset.Object);
 
 	if (CreateWater == false) WaterPlane->SetVisibility(false);
+
+
 
 
 
@@ -104,7 +114,7 @@ AFWGen::~AFWGen()
 
 	if (pProcMeshComponent->IsPendingKill())
 	{
-return;
+		return;
 	}
 
 	pProcMeshComponent->DestroyComponent();
@@ -142,7 +152,14 @@ void AFWGen::GenerateWorld()
 		{
 			for (long long x = -ViewDistance; x < ViewDistance + 1; x++)
 			{
-				std::thread tGenerateChunk(&AFWGen::generateChunk, this, std::move(vPromiseThreads[iSectionIndex]), x, y, iSectionIndex);
+				bool bAroundCenter = false;
+
+				if ((x <= 1) && (x >= -1) && (y <= 1) && (y >= -1))
+				{
+					bAroundCenter = true;
+				}
+
+				std::thread tGenerateChunk(&AFWGen::generateChunk, this, std::move(vPromiseThreads[iSectionIndex]), x, y, iSectionIndex, bAroundCenter);
 				tGenerateChunk.detach();
 
 				iSectionIndex++;
@@ -179,7 +196,7 @@ void AFWGen::GenerateWorld()
 		std::promise<bool> promise;
 		std::future<bool> future = promise.get_future();
 
-		std::thread tGenerateChunk(&AFWGen::generateChunk, this, std::move(promise), 0, 0, 0);
+		std::thread tGenerateChunk(&AFWGen::generateChunk, this, std::move(promise), 0, 0, 0, false);
 		tGenerateChunk.detach();
 
 		future.get();
@@ -231,6 +248,90 @@ void AFWGen::GenerateWorld()
 	else
 	{
 		WaterPlane->SetVisibility(false);
+	}
+
+
+
+	// Create trigger
+	if (WorldSize != -1)
+	{
+#if WITH_EDITOR
+		FlushPersistentDebugLines(GetWorld());
+#endif // WITH_EDITOR
+
+		for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+		{
+			if (!pChunkMap->vChunks[i]->pTriggerBox->IsValidLowLevel())
+			{
+				continue;
+			}
+
+			if (pChunkMap->vChunks[i]->pTriggerBox->IsPendingKill())
+			{
+				continue;
+			}
+
+			pChunkMap->vChunks[i]->pTriggerBox->DestroyComponent();
+		}
+
+
+		for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+		{
+			if (pChunkMap->vChunks[i]->bAroundCenter)
+			{
+				pChunkMap->vChunks[i]->pTriggerBox = NewObject<UStaticMeshComponent>(this, MakeUniqueObjectName(this, UStaticMeshComponent::StaticClass(), "Trigger"));
+				//pChunkMap->vChunks[i]->pTriggerBox->RegisterComponent();
+				pChunkMap->vChunks[i]->pTriggerBox->AttachToComponent(GetRootComponent(),
+					FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
+				pChunkMap->vChunks[i]->pTriggerBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+				float fTriggerX = GetActorLocation().X;
+				float fTriggerY = GetActorLocation().Y;
+				float fTriggerZ = GetActorLocation().Z + LoadUnloadChunkMaxZ / 2;
+
+				if (pChunkMap->vChunks[i]->iX != 0)
+				{
+					// Left or right chunk
+
+					fTriggerX += (pChunkMap->vChunks[i]->iX * ChunkPieceColumnCount * ChunkPieceSizeX);
+				}
+
+				if (pChunkMap->vChunks[i]->iY != 0)
+				{
+					// Top or bottom chunk
+
+					fTriggerY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
+				}
+			}
+
+#if WITH_EDITOR
+			if (DrawChunkBounds)
+			{
+				float fChunkX = GetActorLocation().X;
+				float fChunkY = GetActorLocation().Y;
+
+				if (pChunkMap->vChunks[i]->iX != 0)
+				{
+					// Left or right chunk
+
+					fChunkX += (pChunkMap->vChunks[i]->iX * ChunkPieceColumnCount * ChunkPieceSizeX);
+				}
+
+				if (pChunkMap->vChunks[i]->iY != 0)
+				{
+					// Top or bottom chunk
+
+					fChunkY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
+				}
+
+				DrawDebugBox(GetWorld(), FVector(fChunkX, fChunkY, GetActorLocation().Z + LoadUnloadChunkMaxZ / 2), FVector (
+					(ChunkPieceColumnCount * ChunkPieceSizeX / 2),
+					(ChunkPieceRowCount * ChunkPieceSizeY / 2),
+					LoadUnloadChunkMaxZ / 2), 
+					FColor::Red, true);
+			}
+#endif // WITH_EDITOR
+		}
 	}
 }
 
@@ -462,8 +563,14 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ThirdMaterialOnFirstProbability)
 		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ThirdMaterialOnSecondProbability)
 		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, TerrainCutHeightFromActorZ)
+		|| MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, DrawChunkBounds)
 		)
 	{
+		if (DrawChunkBounds == false)
+		{
+			FlushPersistentDebugLines(GetWorld());
+		}
+
 		if ((TerrainCutHeightFromActorZ > 1.0f) || (TerrainCutHeightFromActorZ < 0.0f))
 		{
 			TerrainCutHeightFromActorZ = 1.0f;
@@ -694,6 +801,11 @@ bool AFWGen::SetViewDistance(int32 NewViewDistance)
 
 		return false;
 	}
+}
+
+void AFWGen::SetLoadUnloadChunkMaxZ(float NewLoadUnloadChunkMaxZ)
+{
+	LoadUnloadChunkMaxZ = NewLoadUnloadChunkMaxZ;
 }
 
 bool AFWGen::SetGenerationFrequency(float NewGenerationFrequency)
@@ -1118,7 +1230,7 @@ float AFWGen::pickVertexMaterial(double height, bool bApplyRND, std::uniform_rea
 	return fVertexColor;
 }
 
-void AFWGen::generateChunk(std::promise<bool>&& promise, long long iX, long long iY, int32 iSectionIndex)
+void AFWGen::generateChunk(std::promise<bool>&& promise, long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter)
 {
 	// Generation setup
 
@@ -1176,7 +1288,7 @@ void AFWGen::generateChunk(std::promise<bool>&& promise, long long iX, long long
 
 	// Create chunk
 
-	FWGenChunk* pNewChunk = new FWGenChunk(iX, iY, iSectionIndex);
+	FWGenChunk* pNewChunk = new FWGenChunk(iX, iY, iSectionIndex, bAroundCenter);
 
 
 

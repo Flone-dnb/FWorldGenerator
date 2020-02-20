@@ -68,6 +68,9 @@ public:
 		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Chunks")
 			bool SetViewDistance(int32 NewViewDistance);
 
+		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Chunks")
+			void SetLoadUnloadChunkMaxZ(float NewLoadUnloadChunkMaxZ);
+
 
 		// Generation
 
@@ -166,6 +169,9 @@ public:
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
 		bool  ComplexPreview = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
+		bool  DrawChunkBounds = false;
 #endif // WITH_EDITOR
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
@@ -182,6 +188,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
 		int32 ViewDistance = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
+		float LoadUnloadChunkMaxZ = 200000.0f;
 
 
 
@@ -300,7 +309,7 @@ protected:
 
 private:
 
-	void  generateChunk            (std::promise<bool>&& promise, long long iX, long long iY, int32 iSectionIndex);
+	void  generateChunk            (std::promise<bool>&& promise, long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter);
 	void  generateSeed             ();
 	float pickVertexMaterial       (double height, bool bApplyRND, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
 	void  blendWorldMaterialsMore  ();
@@ -336,7 +345,7 @@ private:
 class FWGenChunk
 {
 public:
-	FWGenChunk(long long iX, long long iY, int32 iSectionIndex)
+	FWGenChunk(long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter)
 	{
 		pMeshSection = nullptr;
 
@@ -344,6 +353,8 @@ public:
 		this->iY = iY;
 
 		this->iSectionIndex = iSectionIndex;
+
+		this->bAroundCenter = bAroundCenter;
 	}
 
 	void clearChunk()
@@ -358,16 +369,6 @@ public:
 		pMeshSection->Reset();
 	}
 
-	int32 getX() const
-	{
-		return iX;
-	}
-
-	int32 getY() const
-	{
-		return iY;
-	}
-
 	void setMeshSection(FProcMeshSection* pMeshSection)
 	{
 		this->pMeshSection  = pMeshSection;
@@ -376,6 +377,9 @@ public:
 
 	UPROPERTY()
 	FProcMeshSection* pMeshSection;
+
+	UPROPERTY()
+	UStaticMeshComponent* pTriggerBox;
 
 
 	TArray<FProcMeshTangent>  vTangents;
@@ -393,6 +397,9 @@ public:
 
 
 	int32                     iSectionIndex;
+
+
+	bool                      bAroundCenter;
 };
 
 
@@ -428,11 +435,6 @@ public:
 		vChunks.clear();
 
 		pProcMeshComponent->ClearAllMeshSections();
-	}
-
-	FWGenChunk* getLastChunk() const
-	{
-		return vChunks.back();
 	}
 
 	~FWGenChunkMap()
