@@ -19,6 +19,8 @@
 
 #if WITH_EDITOR
 #include "DrawDebugHelpers.h"
+#include <EngineGlobals.h>
+#include <Runtime/Engine/Classes/Engine/Engine.h>
 #endif // WITH_EDITOR
 
 // --------------------------------------------------------------------------------------------------------
@@ -29,11 +31,7 @@
 
 AFWGen::AFWGen()
 {
-#if WITH_EDITOR
-	PrimaryActorTick.bCanEverTick = true;
-#else
 	PrimaryActorTick.bCanEverTick = false;
-#endif
 	bWorldCreated                 = false;
 
 
@@ -171,7 +169,7 @@ void AFWGen::GenerateWorld()
 			vFutureThreads[i].get();
 		}
 
-		std::sort(pChunkMap->vChunks.begin(), pChunkMap->vChunks.end(), [](FWGenChunk* chunk1, FWGenChunk* chunk2) -> bool
+		std::sort(pChunkMap->vChunks.begin(), pChunkMap->vChunks.end(), [](AFWGenChunk* chunk1, AFWGenChunk* chunk2) -> bool
 			{
 				return chunk1->iSectionIndex < chunk2->iSectionIndex ? true : false;
 			});
@@ -211,14 +209,13 @@ void AFWGen::GenerateWorld()
 	{
 		applySlopeDependentBlend();
 	}
-	
 
+	// Update mesh.
 	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
 	{
 		pProcMeshComponent->UpdateMeshSection_LinearColor(i, pChunkMap->vChunks[i]->vVertices, pChunkMap->vChunks[i]->vNormals,
 			pChunkMap->vChunks[i]->vUV0, pChunkMap->vChunks[i]->vVertexColors, pChunkMap->vChunks[i]->vTangents);
 	}
-
 
 
 
@@ -302,6 +299,14 @@ void AFWGen::GenerateWorld()
 
 					fTriggerY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
 				}
+
+				pChunkMap->vChunks[i]->pTriggerBox->SetWorldLocation(FVector(fTriggerX, fTriggerY, fTriggerZ));
+				pChunkMap->vChunks[i]->pTriggerBox->SetWorldScale3D(FVector(ChunkPieceColumnCount * ChunkPieceSizeX / 2,
+					ChunkPieceRowCount * ChunkPieceSizeY / 2,
+					LoadUnloadChunkMaxZ / 2));
+
+				pChunkMap->vChunks[i]->pTriggerBox->OnComponentBeginOverlap.AddDynamic(pChunkMap->vChunks[i], &AFWGenChunk::OnBeginOverlap);
+				pChunkMap->vChunks[i]->pTriggerBox->OnComponentEndOverlap.AddDynamic(pChunkMap->vChunks[i], &AFWGenChunk::OnEndOverlap);
 			}
 
 #if WITH_EDITOR
@@ -1059,7 +1064,7 @@ void AFWGen::generateSeed()
 	iGeneratedSeed = seed;
 }
 
-float AFWGen::pickVertexMaterial(double height, bool bApplyRND, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd)
+float AFWGen::pickVertexMaterial(double height, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd)
 {
 	std::uniform_real_distribution<float> urd_mat(0.005f, 1.0f);
 	std::uniform_int_distribution<int> urd_bool(0, 1);
@@ -1079,47 +1084,44 @@ float AFWGen::pickVertexMaterial(double height, bool bApplyRND, std::uniform_rea
 			*pfLayerTypeWithoutRnd = fVertexColor;
 		}
 
-		if (bApplyRND)
+		float fFirstProb = urd_mat(*pRnd);
+		float fThirdProb  = urd_mat(*pRnd);
+
+		bool bPickFirst = false, bPickThird = false;
+
+		if (fFirstProb <= FirstMaterialOnSecondProbability)
 		{
-			float fFirstProb = urd_mat(*pRnd);
-			float fThirdProb  = urd_mat(*pRnd);
+			bPickFirst = true;
+		}
 
-			bool bPickFirst = false, bPickThird = false;
+		if (fThirdProb <= ThirdMaterialOnSecondProbability)
+		{
+			bPickThird = true;
+		}
 
-			if (fFirstProb <= FirstMaterialOnSecondProbability)
+		if (bPickFirst && bPickThird)
+		{
+			if (urd_bool(*pRnd))
 			{
-				bPickFirst = true;
-			}
-
-			if (fThirdProb <= ThirdMaterialOnSecondProbability)
-			{
-				bPickThird = true;
-			}
-
-			if (bPickFirst && bPickThird)
-			{
-				if (urd_bool(*pRnd))
-				{
-					// Pick Third
-					fVertexColor = 1.0f; // apply third material to the vertex
-				}
-				else
-				{
-					// Pick First
-					fVertexColor = 0.0f; // apply first material to the vertex
-				}
+				// Pick Third
+				fVertexColor = 1.0f; // apply third material to the vertex
 			}
 			else
 			{
-				if (bPickFirst)
-				{
-					fVertexColor = 0.0f; // apply first material to the vertex
-				}
+				// Pick First
+				fVertexColor = 0.0f; // apply first material to the vertex
+			}
+		}
+		else
+		{
+			if (bPickFirst)
+			{
+				fVertexColor = 0.0f; // apply first material to the vertex
+			}
 
-				if (bPickThird)
-				{
-					fVertexColor = 1.0f; // apply third material to the vertex
-				}
+			if (bPickThird)
+			{
+				fVertexColor = 1.0f; // apply third material to the vertex
 			}
 		}
 	}
@@ -1132,53 +1134,52 @@ float AFWGen::pickVertexMaterial(double height, bool bApplyRND, std::uniform_rea
 			*pfLayerTypeWithoutRnd = fVertexColor;
 		}
 
-		if (bApplyRND)
+		float fFirstProb  = urd_mat(*pRnd);
+		float fSecondProb = urd_mat(*pRnd);
+
+		bool bPickFirst = false, bPickSecond = false;
+
+		if (fFirstProb <= FirstMaterialOnThirdProbability)
 		{
-			float fFirstProb  = urd_mat(*pRnd);
-			float fSecondProb = urd_mat(*pRnd);
+			bPickFirst = true;
+		}
 
-			bool bPickFirst = false, bPickSecond = false;
+		if (fSecondProb <= SecondMaterialOnThirdProbability)
+		{
+			bPickSecond = true;
+		}
 
-			if (fFirstProb <= FirstMaterialOnThirdProbability)
+		if (bPickFirst && bPickSecond)
+		{
+			if (urd_bool(*pRnd))
 			{
-				bPickFirst = true;
-			}
-
-			if (fSecondProb <= SecondMaterialOnThirdProbability)
-			{
-				bPickSecond = true;
-			}
-
-			if (bPickFirst && bPickSecond)
-			{
-				if (urd_bool(*pRnd))
-				{
-					// Pick Third
-					fVertexColor = 0.5f; // apply second material to the vertex
-				}
-				else
-				{
-					// Pick First
-					fVertexColor = 0.0f; // apply first material to the vertex
-				}
+				// Pick Third
+				fVertexColor = 0.5f; // apply second material to the vertex
 			}
 			else
 			{
-				if (bPickFirst)
-				{
-					fVertexColor = 0.0f; // apply first material to the vertex
-				}
+				// Pick First
+				fVertexColor = 0.0f; // apply first material to the vertex
+			}
+		}
+		else
+		{
+			if (bPickFirst)
+			{
+				fVertexColor = 0.0f; // apply first material to the vertex
+			}
 
-				if (bPickSecond)
-				{
-					fVertexColor = 0.5f; // apply second material to the vertex
-				}
+			if (bPickSecond)
+			{
+				fVertexColor = 0.5f; // apply second material to the vertex
 			}
 		}
 	}
-	else if (bApplyRND)
+	else
 	{
 		// first material
+
+		fVertexColor = 0.0f;
 
 		if (pfLayerTypeWithoutRnd)
 		{
@@ -1288,7 +1289,8 @@ void AFWGen::generateChunk(std::promise<bool>&& promise, long long iX, long long
 
 	// Create chunk
 
-	FWGenChunk* pNewChunk = new FWGenChunk(iX, iY, iSectionIndex, bAroundCenter);
+	AFWGenChunk* pNewChunk = NewObject<AFWGenChunk>(this, MakeUniqueObjectName(this, AFWGenChunk::StaticClass(), "Chunk_"));
+	pNewChunk->setInit(iX, iY, iSectionIndex, bAroundCenter);
 
 
 
@@ -1359,13 +1361,14 @@ void AFWGen::generateChunk(std::promise<bool>&& promise, long long iX, long long
 			}
 			else
 			{
-				if ((i == 0) || (i == iCorrectedRowCount - 1) || (j == 0)|| (j == iCorrectedColumnCount - 1))
+				if ((i == 0) || (i == iCorrectedRowCount - 1) || (j == 0) || (j == iCorrectedColumnCount - 1))
 				{
-					fAlphaColor = pickVertexMaterial(generatedValue, false, &urd, &rnd, &fAlphaColorWithoutRnd);
+					pickVertexMaterial(generatedValue, &urd, &rnd, &fAlphaColorWithoutRnd);
+					fAlphaColor = fAlphaColorWithoutRnd;
 				}
 				else
 				{
-					fAlphaColor = pickVertexMaterial(generatedValue, true, &urd, &rnd, &fAlphaColorWithoutRnd);
+					fAlphaColor = pickVertexMaterial(generatedValue, &urd, &rnd, &fAlphaColorWithoutRnd);
 				}
 			}
 
@@ -1495,7 +1498,7 @@ bool AFWGen::areEqual(float a, float b, float eps)
 }
 
 
-void AFWGen::compareHeightDifference(FWGenChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff)
+void AFWGen::compareHeightDifference(AFWGenChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff)
 {
 	if (vProcessedVertices[iCompareToIndex] == false)
 	{
@@ -1551,3 +1554,18 @@ bool AFWGen::SetMinSlopeHeightMultiplier(float NewMinSlopeHeightMultiplier)
 	}
 }
 
+void AFWGenChunk::OnBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor && OtherActor != this && OtherComp)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Overlap Begin"));
+	}
+}
+
+void AFWGenChunk::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (OtherActor && OtherActor != this && OtherComp)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Overlap End"));
+	}
+}

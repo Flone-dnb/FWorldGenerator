@@ -31,7 +31,7 @@ class UBoxComponent;
 // --------------------------------------------------------------------------------------------------------
 
 class FWGenChunkMap;
-class FWGenChunk;
+class AFWGenChunk;
 
 
 UCLASS()
@@ -311,12 +311,12 @@ private:
 
 	void  generateChunk            (std::promise<bool>&& promise, long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter);
 	void  generateSeed             ();
-	float pickVertexMaterial       (double height, bool bApplyRND, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
+	float pickVertexMaterial       (double height, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
 	void  blendWorldMaterialsMore  ();
 	void  applySlopeDependentBlend ();
 
 	bool areEqual                  (float a, float b, float eps);
-	void compareHeightDifference   (FWGenChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff);
+	void compareHeightDifference   (AFWGenChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff);
 
 #if WITH_EDITOR
 	void refreshPreview();
@@ -341,11 +341,14 @@ private:
 // --------------------------------------------------------------------------------------------------------
 
 
-
-class FWGenChunk
+UCLASS()
+class AFWGenChunk : public AActor
 {
+
+	GENERATED_BODY()
+
 public:
-	FWGenChunk(long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter)
+	void setInit(long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter)
 	{
 		pMeshSection = nullptr;
 
@@ -374,8 +377,30 @@ public:
 		this->pMeshSection  = pMeshSection;
 	}
 
+	~AFWGenChunk()
+	{
+		if (!pTriggerBox->IsValidLowLevel())
+		{
+			return;
+		}
 
-	UPROPERTY()
+		if (pTriggerBox->IsPendingKill())
+		{
+			return;
+		}
+
+		pTriggerBox->DestroyComponent();
+		pTriggerBox = nullptr;
+	}
+
+
+	UFUNCTION()
+	void OnBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnEndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+
 	FProcMeshSection* pMeshSection;
 
 	UPROPERTY()
@@ -412,7 +437,7 @@ class FWGenChunkMap
 {
 public:
 
-	void addChunk(FWGenChunk* pChunk)
+	void addChunk(AFWGenChunk* pChunk)
 	{
 		vChunks.push_back(pChunk);
 	}
@@ -429,7 +454,18 @@ public:
 	{
 		for (size_t i = 0; i < vChunks.size(); i++)
 		{
-			delete vChunks[i];
+			if (!vChunks[i]->IsValidLowLevel())
+			{
+				continue;;
+			}
+
+			if (vChunks[i]->IsPendingKill())
+			{
+				continue;
+			}
+
+			vChunks[i]->Destroy();
+			vChunks[i] = nullptr;
 		}
 
 		vChunks.clear();
@@ -441,9 +477,20 @@ public:
 	{
 		for (size_t i = 0; i < vChunks.size(); i++)
 		{
-			delete vChunks[i];
+			if (!vChunks[i]->IsValidLowLevel())
+			{
+				continue;;
+			}
+
+			if (vChunks[i]->IsPendingKill())
+			{
+				continue;
+			}
+
+			vChunks[i]->Destroy();
+			vChunks[i] = nullptr;
 		}
 	}
 
-	std::vector<FWGenChunk*> vChunks;
+	std::vector<AFWGenChunk*> vChunks;
 };
