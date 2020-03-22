@@ -5,17 +5,14 @@
 
 #include "FWGen.h"
 
+// UE
+#include "Components/StaticMeshComponent.h"
+
 // STL
 #include <ctime>
 
 // External
 #include "PerlinNoise.hpp"
-
-#if WITH_EDITOR
-#include "Components/BoxComponent.h"
-#endif // WITH_EDITOR
-
-#include "Components/StaticMeshComponent.h"
 
 #if WITH_EDITOR
 #include "DrawDebugHelpers.h"
@@ -36,10 +33,6 @@ AFWGen::AFWGen()
 
 
 	iGeneratedSeed                = 0;
-
-
-	pChunkMap                     = nullptr;
-
 
 
 
@@ -118,13 +111,47 @@ AFWGen::~AFWGen()
 	pProcMeshComponent->DestroyComponent();
 }
 
+bool AFWGen::BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName, float ProbabilityToSpawn)
+{
+	FWGCallback callback;
+
+	callback.pOwner = FunctionOwner;
+	callback.fProbabilityToSpawn = ProbabilityToSpawn;
+
+	for ( TFieldIterator<UFunction> FIT ( FunctionOwner->GetClass(), EFieldIteratorFlags::IncludeSuper ); FIT; ++FIT)
+	{
+		UFunction* Function = *FIT;
+		if (Function->GetName() == FunctionName)
+		{
+			callback.pFunction = Function;
+
+			vObjectsToSpawn.push_back(callback);
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void AFWGen::UnBindFunctionToSpawn(FString FunctionName)
+{
+	for (size_t i = 0; i < vObjectsToSpawn.size(); i++)
+	{
+		if (vObjectsToSpawn[i].sFunctionName == FunctionName)
+		{
+			vObjectsToSpawn.erase( vObjectsToSpawn.begin() + i);
+			break;
+		}
+	}
+}
+
 void AFWGen::GenerateWorld()
 {
 	if (pChunkMap)
 	{
 		pChunkMap->clearWorld(pProcMeshComponent);
 	}
-
 
 
 	generateSeed();
@@ -169,7 +196,7 @@ void AFWGen::GenerateWorld()
 			vFutureThreads[i].get();
 		}
 
-		std::sort(pChunkMap->vChunks.begin(), pChunkMap->vChunks.end(), [](AFWGenChunk* chunk1, AFWGenChunk* chunk2) -> bool
+		std::sort(pChunkMap->vChunks.begin(), pChunkMap->vChunks.end(), [](AFWGChunk* chunk1, AFWGChunk* chunk2) -> bool
 			{
 				return chunk1->iSectionIndex < chunk2->iSectionIndex ? true : false;
 			});
@@ -248,6 +275,8 @@ void AFWGen::GenerateWorld()
 	}
 
 
+	spawnObjects();
+
 
 	// Create trigger
 	if (WorldSize != -1)
@@ -256,7 +285,7 @@ void AFWGen::GenerateWorld()
 		FlushPersistentDebugLines(GetWorld());
 #endif // WITH_EDITOR
 
-		for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+		/*for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
 		{
 			if (!pChunkMap->vChunks[i]->pTriggerBox->IsValidLowLevel())
 			{
@@ -269,67 +298,39 @@ void AFWGen::GenerateWorld()
 			}
 
 			pChunkMap->vChunks[i]->pTriggerBox->DestroyComponent();
-		}
+		}*/
+
 
 
 		for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
 		{
-			if (pChunkMap->vChunks[i]->bAroundCenter)
+			float fTriggerX = GetActorLocation().X;
+			float fTriggerY = GetActorLocation().Y;
+			float fTriggerZ = GetActorLocation().Z + LoadUnloadChunkMaxZ / 2;
+
+			if (pChunkMap->vChunks[i]->iX != 0)
 			{
-				pChunkMap->vChunks[i]->pTriggerBox = NewObject<UStaticMeshComponent>(this, MakeUniqueObjectName(this, UStaticMeshComponent::StaticClass(), "Trigger"));
-				//pChunkMap->vChunks[i]->pTriggerBox->RegisterComponent();
-				pChunkMap->vChunks[i]->pTriggerBox->AttachToComponent(GetRootComponent(),
-					FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
-				pChunkMap->vChunks[i]->pTriggerBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+				// Left or right chunk
 
-				float fTriggerX = GetActorLocation().X;
-				float fTriggerY = GetActorLocation().Y;
-				float fTriggerZ = GetActorLocation().Z + LoadUnloadChunkMaxZ / 2;
-
-				if (pChunkMap->vChunks[i]->iX != 0)
-				{
-					// Left or right chunk
-
-					fTriggerX += (pChunkMap->vChunks[i]->iX * ChunkPieceColumnCount * ChunkPieceSizeX);
-				}
-
-				if (pChunkMap->vChunks[i]->iY != 0)
-				{
-					// Top or bottom chunk
-
-					fTriggerY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
-				}
-
-				pChunkMap->vChunks[i]->pTriggerBox->SetWorldLocation(FVector(fTriggerX, fTriggerY, fTriggerZ));
-				pChunkMap->vChunks[i]->pTriggerBox->SetWorldScale3D(FVector(ChunkPieceColumnCount * ChunkPieceSizeX / 2,
-					ChunkPieceRowCount * ChunkPieceSizeY / 2,
-					LoadUnloadChunkMaxZ / 2));
-
-				pChunkMap->vChunks[i]->pTriggerBox->OnComponentBeginOverlap.AddDynamic(pChunkMap->vChunks[i], &AFWGenChunk::OnBeginOverlap);
-				pChunkMap->vChunks[i]->pTriggerBox->OnComponentEndOverlap.AddDynamic(pChunkMap->vChunks[i], &AFWGenChunk::OnEndOverlap);
+				fTriggerX += (pChunkMap->vChunks[i]->iX * ChunkPieceColumnCount * ChunkPieceSizeX);
 			}
+
+			if (pChunkMap->vChunks[i]->iY != 0)
+			{
+				// Top or bottom chunk
+
+				fTriggerY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
+			}
+
+			/*pChunkMap->vChunks[i]->pTriggerBox->InitBoxExtent(FVector(ChunkPieceColumnCount * ChunkPieceSizeX / 2,
+				ChunkPieceRowCount * ChunkPieceSizeY / 2,
+				LoadUnloadChunkMaxZ / 2));
+			pChunkMap->vChunks[i]->pTriggerBox->SetWorldLocation(FVector(fTriggerX, fTriggerY, fTriggerZ));*/
 
 #if WITH_EDITOR
 			if (DrawChunkBounds)
 			{
-				float fChunkX = GetActorLocation().X;
-				float fChunkY = GetActorLocation().Y;
-
-				if (pChunkMap->vChunks[i]->iX != 0)
-				{
-					// Left or right chunk
-
-					fChunkX += (pChunkMap->vChunks[i]->iX * ChunkPieceColumnCount * ChunkPieceSizeX);
-				}
-
-				if (pChunkMap->vChunks[i]->iY != 0)
-				{
-					// Top or bottom chunk
-
-					fChunkY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
-				}
-
-				DrawDebugBox(GetWorld(), FVector(fChunkX, fChunkY, GetActorLocation().Z + LoadUnloadChunkMaxZ / 2), FVector (
+				DrawDebugBox(GetWorld(), FVector(fTriggerX, fTriggerY, fTriggerZ), FVector (
 					(ChunkPieceColumnCount * ChunkPieceSizeX / 2),
 					(ChunkPieceRowCount * ChunkPieceSizeY / 2),
 					LoadUnloadChunkMaxZ / 2), 
@@ -537,6 +538,22 @@ void AFWGen::applySlopeDependentBlend()
 				}
 
 				iVertexIndex++;
+			}
+		}
+	}
+}
+
+void AFWGen::spawnObjects()
+{
+	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+	{
+		for (size_t y = 0; y < pChunkMap->vChunks[i]->vChunkCells.size(); y++)
+		{
+			for (size_t x = 0; x < pChunkMap->vChunks[i]->vChunkCells[y].size(); x++)
+			{
+				FTransform transform = FTransform(FRotator(0, 0, 0), FVector(0, 0, 0), FVector(1, 1, 1));
+
+				vObjectsToSpawn[i].pOwner->ProcessEvent( vObjectsToSpawn[i].pFunction, &transform);
 			}
 		}
 	}
@@ -1289,8 +1306,11 @@ void AFWGen::generateChunk(std::promise<bool>&& promise, long long iX, long long
 
 	// Create chunk
 
-	AFWGenChunk* pNewChunk = NewObject<AFWGenChunk>(this, MakeUniqueObjectName(this, AFWGenChunk::StaticClass(), "Chunk_"));
+	// You don't want to use NewObject for Actors (only UObjects).
+	AFWGChunk* pNewChunk = NewObject<AFWGChunk>(GetTransientPackage(), MakeUniqueObjectName(this, AFWGChunk::StaticClass(), "Chunk_"));
+	//AFWGChunk* pNewChunk = GetWorld()->SpawnActor<AFWGChunk>(AFWGChunk::StaticClass(), FTransform(FRotator(0, 0, 0), FVector(0, 0, 0), FVector(1, 1, 1)));
 	pNewChunk->setInit(iX, iY, iSectionIndex, bAroundCenter);
+	pNewChunk->setChunkSize(DivideChunkXCount, DivideChunkYCount);
 
 
 
@@ -1492,13 +1512,14 @@ void AFWGen::refreshPreview()
 }
 #endif // WITH_EDITOR
 
+
+
 bool AFWGen::areEqual(float a, float b, float eps)
 {
 	return fabs(a - b) < eps;
 }
 
-
-void AFWGen::compareHeightDifference(AFWGenChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff)
+void AFWGen::compareHeightDifference(AFWGChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff)
 {
 	if (vProcessedVertices[iCompareToIndex] == false)
 	{
@@ -1554,18 +1575,30 @@ bool AFWGen::SetMinSlopeHeightMultiplier(float NewMinSlopeHeightMultiplier)
 	}
 }
 
-void AFWGenChunk::OnBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+bool AFWGen::SetDivideChunkXCount(int32 DivideChunkXCount)
 {
-	if (OtherActor && OtherActor != this && OtherComp)
+	if (DivideChunkXCount < 1)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Overlap Begin"));
+		return true;
+	}
+	else
+	{
+		this->DivideChunkXCount = DivideChunkXCount;
+
+		return false;
 	}
 }
 
-void AFWGenChunk::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+bool AFWGen::SetDivideChunkYCount(int32 DivideChunkYCount)
 {
-	if (OtherActor && OtherActor != this && OtherComp)
+	if (DivideChunkYCount < 1)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Overlap End"));
+		return true;
+	}
+	else
+	{
+		this->DivideChunkYCount = DivideChunkYCount;
+
+		return false;
 	}
 }

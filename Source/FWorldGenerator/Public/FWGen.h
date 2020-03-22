@@ -9,6 +9,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ProceduralMeshComponent.h"
+#include "Components/BoxComponent.h"
 
 // STL
 #include <vector>
@@ -16,14 +17,13 @@
 #include <future>
 #include <thread>
 
+// Custom
+#include "../Private/FWGChunk.h"
+
 #include "FWGen.generated.h"
 
 
 class UStaticMeshComponent;
-
-#if WITH_EDITOR
-class UBoxComponent;
-#endif // WITH_EDITOR
 
 
 // --------------------------------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ class UBoxComponent;
 
 class FWGenChunkMap;
 class AFWGenChunk;
-
+class FWGCallback;
 
 UCLASS()
 class FWORLDGENERATOR_API AFWGen : public AActor
@@ -44,6 +44,11 @@ public:
 
 	~AFWGen();
 
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		bool          BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName, float ProbabilityToSpawn);
+
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		void          UnBindFunctionToSpawn(FString FunctionName);
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		void          GenerateWorld();
@@ -157,6 +162,14 @@ public:
 
 		UFUNCTION(BlueprintCallable, Category = "FWorldGenerator | Slope Dependent Blend")
 			bool SetMinSlopeHeightMultiplier(float NewMinSlopeHeightMultiplier);
+
+
+
+		UFUNCTION(BlueprintCallable, Category = "Spawning Objects")
+			bool SetDivideChunkXCount(int32 DivideChunkXCount);
+
+		UFUNCTION(BlueprintCallable, Category = "Spawning Objects")
+			bool SetDivideChunkYCount(int32 DivideChunkYCount);
 
 
 #if WITH_EDITOR
@@ -285,6 +298,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slope Dependent Blend")
 		float MinSlopeHeightMultiplier = 0.006f;
 
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
+		int32 DivideChunkXCount = 300;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
+		int32 DivideChunkYCount = 300;
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -314,13 +335,17 @@ private:
 	float pickVertexMaterial       (double height, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
 	void  blendWorldMaterialsMore  ();
 	void  applySlopeDependentBlend ();
+	void  spawnObjects             ();
 
 	bool areEqual                  (float a, float b, float eps);
-	void compareHeightDifference   (AFWGenChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff);
+	void compareHeightDifference   (AFWGChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff);
 
 #if WITH_EDITOR
 	void refreshPreview();
 #endif // WITH_EDITOR
+
+	std::vector<FWGCallback>  vObjectsToSpawn;
+
 
 	UPROPERTY()
 	UProceduralMeshComponent* pProcMeshComponent;
@@ -335,98 +360,18 @@ private:
 	bool                      bWorldCreated;
 };
 
-
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------
 
-
-UCLASS()
-class AFWGenChunk : public AActor
+class FWGCallback
 {
-
-	GENERATED_BODY()
-
 public:
-	void setInit(long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter)
-	{
-		pMeshSection = nullptr;
-
-		this->iX = iX;
-		this->iY = iY;
-
-		this->iSectionIndex = iSectionIndex;
-
-		this->bAroundCenter = bAroundCenter;
-	}
-
-	void clearChunk()
-	{
-		vVertices     .Empty();
-		vTriangles    .Empty();
-		vNormals      .Empty();
-		vUV0          .Empty();
-		vVertexColors .Empty();
-		vTangents     .Empty();
-
-		pMeshSection->Reset();
-	}
-
-	void setMeshSection(FProcMeshSection* pMeshSection)
-	{
-		this->pMeshSection  = pMeshSection;
-	}
-
-	~AFWGenChunk()
-	{
-		if (!pTriggerBox->IsValidLowLevel())
-		{
-			return;
-		}
-
-		if (pTriggerBox->IsPendingKill())
-		{
-			return;
-		}
-
-		pTriggerBox->DestroyComponent();
-		pTriggerBox = nullptr;
-	}
-
-
-	UFUNCTION()
-	void OnBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void OnEndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-
-	FProcMeshSection* pMeshSection;
-
-	UPROPERTY()
-	UStaticMeshComponent* pTriggerBox;
-
-
-	TArray<FProcMeshTangent>  vTangents;
-	TArray<FLinearColor>      vVertexColors;
-	TArray<FVector>           vVertices;
-	TArray<int32>             vTriangles;
-	TArray<FVector>           vNormals;
-	TArray<FVector2D>         vUV0;
-	std::vector<int32>        vLayerIndex;
-
-	size_t                    iMaxZVertexIndex;
-
-	long long                 iX;
-	long long                 iY;
-
-
-	int32                     iSectionIndex;
-
-
-	bool                      bAroundCenter;
+	UObject* pOwner;
+	UFunction* pFunction;
+	float fProbabilityToSpawn;
+	FString sFunctionName;
 };
-
 
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------
@@ -437,7 +382,7 @@ class FWGenChunkMap
 {
 public:
 
-	void addChunk(AFWGenChunk* pChunk)
+	void addChunk(AFWGChunk* pChunk)
 	{
 		vChunks.push_back(pChunk);
 	}
@@ -492,5 +437,5 @@ public:
 		}
 	}
 
-	std::vector<AFWGenChunk*> vChunks;
+	std::vector<AFWGChunk*> vChunks;
 };

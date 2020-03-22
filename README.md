@@ -1,4 +1,4 @@
-# Parameters
+﻿# Parameters
 
 You can configure the generator's parameters in the details tab (or through the "set" functions of the generator - see below).<br>
 <br>
@@ -73,6 +73,12 @@ You can configure the generator's parameters in the details tab (or through the 
     <li><b>Min Slope Height Multiplier</b> (valid values range: [0.0, 1.0]) - defines the minimum height difference between two close vertices as (GenerationMaxZFromActorZ * this value) for which the second material will be applied. You usually should keep this value pretty low but not too low.</li>
 </ul>
 
+<h3>Spawning Objects</h3>
+<ul>
+    <li><b>Divide Chunk X Count</b> (valid values range: [1, ...]) - every chunk is divided into cells, any cell may have an object in it. This parameter determines the X size of the cell. For example: if your "Chunk Piece Size X" = 300 and "Chunk Piece Column Count" = 300, then your chunk X size will be 90000 and if you set "Divide Chunk X Count" to the 300 then your chunk will have 300 cells by X-axis.</li>
+    <li><b>Divide Chunk Y Count</b> (valid values range: [1, ...]) - every chunk is divided into cells, any cell may have an object in it. This parameter determines the Y size of the cell. For example: if your "Chunk Piece Size Y" = 300 and "Chunk Piece Row Count" = 300, then your chunk Y size will be 90000 and if you set "Divide Chunk Y Count" to the 300 then your chunk will have 300 cells by Y-axis.</li>
+</ul>
+
 # Terrain Material
 
 To set up Ground Material correctly you can just add your material but it's just gonna cover all the terrain. If you want your materials to change depending on the terrain height, for example, if you want to have grass on low terrain height and snow on the high terrain height then you should create the material which is similar to the one below:
@@ -95,6 +101,17 @@ If you want your terrain to have only one material then you can just connect you
 
 To use the generator just place an object of the <b>FWGen</b> class (search in the Modes tab in UE) in your level and configure its details. Don't forget to enable Complex Preview if you want to see how it looks.<br>
 To generate the world in the runtime you need to call the <b>GenerateWorld()</b> function from this object.
+
+# How to spawn custom objects in world randomly
+
+If you want FWorldGenerator to spawn your custom objects in the world such as trees, then you need to call BindFunctionToSpawn function and pass a name of the function which will be called on GenerateWorld() and the parameter of this function will be position in which you will need to spawn an object by yourself.
+<br>BindFunctionToSpawn takes 3 arguments:
+<ul>
+    <li><b>Function Owner</b> - class in which the function is defined.</li>
+    <li><b>Function Name</b> - name of the function which will be called. In this function, you will spawn your object in the world.</li>
+    <li><b>Probability To Spawn</b> - probability from 0.0 to 1.0 with which this function will be called (on every chunk cell). See "Spawning Objects" above.</li>
+</ul>
+You need to control your probabilities manually, so that the probabilities of different objects add up to 1.0.
 
 # Functions
 
