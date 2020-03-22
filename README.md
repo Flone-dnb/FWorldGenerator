@@ -83,7 +83,7 @@ You can configure the generator's parameters in the details tab (or through the 
 
 To set up Ground Material correctly you can just add your material but it's just gonna cover all the terrain. If you want your materials to change depending on the terrain height, for example, if you want to have grass on low terrain height and snow on the high terrain height then you should create the material which is similar to the one below:
 <p align="center">
-  <img width="650" height="400" src="pics/Example Ground Material.jpg">
+  <img width="700" height="400" src="pics/Example Ground Material.jpg">
 </p>
 Let's guess you have a material of grass, you have base color, metallic, specular, etc. You can just create simple material with the Lerp_3Color node and add the Vertex Color node. Then copy-paste your material into this new simple material and connect your base color output to one of then Lerp_3Color inputs. Then you can copy-paste the Lerp and Vertex Color nodes and connect them to the Normal input of the material, for example.<br>
 <br>
@@ -111,10 +111,10 @@ If you want FWorldGenerator to spawn your custom objects in the world such as tr
     <li><b>Function Name</b> - name of the function which will be called. In this function, you will spawn your object in the world.</li>
     <li><b>Probability To Spawn</b> - probability from 0.0 to 1.0 with which this function will be called (on every chunk cell). See "Spawning Objects" above.</li>
 </ul>
-"Function Name" should be a function that accepts FTransform as the only parameter.
+"Function Name" should be a function that accepts Transform as the only parameter.
 <p align="center">
-  <img width="650" height="400" src="pics/Example BindFunctionToSpawn 1.jpg">
-  <img width="650" height="400" src="pics/Example BindFunctionToSpawn 2.jpg">
+  <img width="700" height="400" src="pics/Example BindFunctionToSpawn 1.jpg">
+  <img width="700" height="400" src="pics/Example BindFunctionToSpawn 2.jpg">
 </p>
 <br>
 You need to control your probabilities manually, so that the probabilities of different objects add up to 1.0.
