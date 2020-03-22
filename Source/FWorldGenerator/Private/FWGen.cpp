@@ -545,7 +545,11 @@ void AFWGen::applySlopeDependentBlend()
 
 void AFWGen::spawnObjects()
 {
-	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+	FTransform transform = FTransform(FRotator(0, 0, 0), FVector(0, 0, 0), FVector(1, 1, 1));
+
+	vObjectsToSpawn[0].pOwner->ProcessEvent( vObjectsToSpawn[0].pFunction, &transform);
+
+	/*for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
 	{
 		for (size_t y = 0; y < pChunkMap->vChunks[i]->vChunkCells.size(); y++)
 		{
@@ -556,7 +560,7 @@ void AFWGen::spawnObjects()
 				vObjectsToSpawn[i].pOwner->ProcessEvent( vObjectsToSpawn[i].pFunction, &transform);
 			}
 		}
-	}
+	}*/
 }
 
 #if WITH_EDITOR
