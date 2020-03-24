@@ -120,6 +120,7 @@ If you want FWorldGenerator to spawn your custom objects in the world such as tr
   <img width="700" height="400" src="pics/Example BindFunctionToSpawn 1.jpg">
 </p>
 And here is the example of how you want to spawn your actors:
+(note that Collision Handling Override is set to "Always Spawn, Ignore Collisions")
 <p align="center">
   <img width="700" height="400" src="pics/Example BindFunctionToSpawn 2.jpg">
 </p>
