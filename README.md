@@ -117,12 +117,13 @@ If you want FWorldGenerator to spawn your custom objects in the world such as tr
 </ul>
 "Function Name" should be a function that accepts Transform as the only parameter.
 <p align="center">
-  <img width="700" height="400" src="pics/Example BindFunctionToSpawn 1.jpg">
+  <img width="800" height="450" src="pics/Example BindFunctionToSpawn 1.jpg">
 </p>
 And here is the example of how you want to spawn your actors:
+<br>
 (note that Collision Handling Override is set to "Always Spawn, Ignore Collisions")
 <p align="center">
-  <img width="700" height="400" src="pics/Example BindFunctionToSpawn 2.jpg">
+  <img width="800" height="450" src="pics/Example BindFunctionToSpawn 2.jpg">
 </p>
 
 <br>
