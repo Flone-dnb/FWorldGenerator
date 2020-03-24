@@ -146,6 +146,23 @@ void AFWGen::UnBindFunctionToSpawn(FString FunctionName)
 	}
 }
 
+void AFWGen::AddOverlapToActorClass(UClass* OverlapToClass)
+{
+	vOverlapToClasses.push_back(OverlapToClass->GetName());
+}
+
+void AFWGen::RemoveOverlapToActorClass(UClass* OverlapToClass)
+{
+	for (size_t i = 0; i < vOverlapToClasses.size(); i++)
+	{
+		if (vOverlapToClasses[i] == OverlapToClass->GetName())
+		{
+			vOverlapToClasses.erase( vOverlapToClasses.begin() + i);
+			break;
+		}
+	}
+}
+
 void AFWGen::GenerateWorld()
 {
 	if (pChunkMap)
@@ -159,13 +176,6 @@ void AFWGen::GenerateWorld()
 	if (WorldSize != -1)
 	{
 		size_t iChunkCount = (ViewDistance * 2 + 1) * (ViewDistance * 2 + 1);
-		std::vector<std::promise<bool>> vPromiseThreads(iChunkCount);
-		std::vector<std::future<bool>> vFutureThreads;
-
-		for (size_t i = 0; i < iChunkCount; i++)
-		{
-			vFutureThreads.push_back(vPromiseThreads[i].get_future());
-		}
 
 
 		// Generate the chunks.
@@ -184,47 +194,19 @@ void AFWGen::GenerateWorld()
 					bAroundCenter = true;
 				}
 
-				std::thread tGenerateChunk(&AFWGen::generateChunk, this, std::move(vPromiseThreads[iSectionIndex]), x, y, iSectionIndex, bAroundCenter);
-				tGenerateChunk.detach();
+				AFWGChunk* pNewChunk = generateChunk(x, y, iSectionIndex, bAroundCenter);
+
+				pChunkMap->addChunk(pNewChunk);
 
 				iSectionIndex++;
 			}
 		}
-
-		for (size_t i = 0; i < vFutureThreads.size(); i++)
-		{
-			vFutureThreads[i].get();
-		}
-
-		std::sort(pChunkMap->vChunks.begin(), pChunkMap->vChunks.end(), [](AFWGChunk* chunk1, AFWGChunk* chunk2) -> bool
-			{
-				return chunk1->iSectionIndex < chunk2->iSectionIndex ? true : false;
-			});
-
-		for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
-		{
-			pProcMeshComponent->CreateMeshSection_LinearColor(pChunkMap->vChunks[i]->iSectionIndex, pChunkMap->vChunks[i]->vVertices, pChunkMap->vChunks[i]->vTriangles,
-				pChunkMap->vChunks[i]->vNormals, pChunkMap->vChunks[i]->vUV0, pChunkMap->vChunks[i]->vVertexColors,
-				pChunkMap->vChunks[i]->vTangents, true);
-
-			// Set material
-			if (GroundMaterial)
-			{
-				pProcMeshComponent->SetMaterial(pChunkMap->vChunks[i]->iSectionIndex, GroundMaterial);
-			}
-
-			pChunkMap->vChunks[i]->setMeshSection(pProcMeshComponent->GetProcMeshSection(pChunkMap->vChunks[i]->iSectionIndex));
-		}
 	}
 	else
 	{
-		std::promise<bool> promise;
-		std::future<bool> future = promise.get_future();
+		AFWGChunk* pNewChunk = generateChunk(0, 0, 0, false);
 
-		std::thread tGenerateChunk(&AFWGen::generateChunk, this, std::move(promise), 0, 0, 0, false);
-		tGenerateChunk.detach();
-
-		future.get();
+		pChunkMap->addChunk(pNewChunk);
 	}
 
 	if (ApplyGroundMaterialBlend)
@@ -322,10 +304,13 @@ void AFWGen::GenerateWorld()
 				fTriggerY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
 			}
 
-			/*pChunkMap->vChunks[i]->pTriggerBox->InitBoxExtent(FVector(ChunkPieceColumnCount * ChunkPieceSizeX / 2,
+			pChunkMap->vChunks[i]->SetActorLocation(FVector(fTriggerX, fTriggerY, fTriggerZ));
+			pChunkMap->vChunks[i]->pTriggerBox->SetBoxExtent(FVector(ChunkPieceColumnCount * ChunkPieceSizeX / 2,
 				ChunkPieceRowCount * ChunkPieceSizeY / 2,
 				LoadUnloadChunkMaxZ / 2));
-			pChunkMap->vChunks[i]->pTriggerBox->SetWorldLocation(FVector(fTriggerX, fTriggerY, fTriggerZ));*/
+
+			pChunkMap->vChunks[i]->pTriggerBox->SetGenerateOverlapEvents(true);
+			pChunkMap->vChunks[i]->setOverlapToActors(vOverlapToClasses);
 
 #if WITH_EDITOR
 			if (DrawChunkBounds)
@@ -545,22 +530,91 @@ void AFWGen::applySlopeDependentBlend()
 
 void AFWGen::spawnObjects()
 {
-	FTransform transform = FTransform(FRotator(0, 0, 0), FVector(0, 0, 0), FVector(1, 1, 1));
+	std::mt19937_64 gen(std::random_device{}());
 
-	vObjectsToSpawn[0].pOwner->ProcessEvent( vObjectsToSpawn[0].pFunction, &transform);
+	std::uniform_real_distribution<float> urd(0.0f, 1.0f);
 
-	/*for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+	std::sort(vObjectsToSpawn.begin(), vObjectsToSpawn.end(),
+		[](const FWGCallback& a, const FWGCallback& b) -> bool
+		{
+			return a.fProbabilityToSpawn < b.fProbabilityToSpawn;
+		});
+
+	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
 	{
+		float fChunkX = GetActorLocation().X;
+		float fChunkY = GetActorLocation().Y;
+
+		if (pChunkMap->vChunks[i]->iX != 0)
+		{
+			fChunkX += (pChunkMap->vChunks[i]->iX * ChunkPieceColumnCount * ChunkPieceSizeX);
+		}
+
+		if (pChunkMap->vChunks[i]->iY != 0)
+		{
+			fChunkY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
+		}
+
+		float fStartX = fChunkX - (ChunkPieceColumnCount * ChunkPieceSizeX) / 2;
+		float fStartY = fChunkY - (ChunkPieceRowCount * ChunkPieceSizeY) / 2;
+
+		float fXCellSize = ChunkPieceColumnCount * ChunkPieceSizeX;
+		float fYCellSize = ChunkPieceRowCount    * ChunkPieceSizeY;
+
+
 		for (size_t y = 0; y < pChunkMap->vChunks[i]->vChunkCells.size(); y++)
 		{
 			for (size_t x = 0; x < pChunkMap->vChunks[i]->vChunkCells[y].size(); x++)
 			{
-				FTransform transform = FTransform(FRotator(0, 0, 0), FVector(0, 0, 0), FVector(1, 1, 1));
+				float fGeneratedProbForThisCell = urd(gen);
+				float fFullProb = 0.0f;
 
-				vObjectsToSpawn[i].pOwner->ProcessEvent( vObjectsToSpawn[i].pFunction, &transform);
+				for (size_t k = 0; k < vObjectsToSpawn.size(); k++)
+				{
+					float fNextValue = 1.0f - fFullProb;
+					if (k != vObjectsToSpawn.size() - 1)
+					{
+						fNextValue =  vObjectsToSpawn[k].fProbabilityToSpawn;
+					}
+
+					if ((fGeneratedProbForThisCell > fFullProb) && (fGeneratedProbForThisCell <= fFullProb + fNextValue) )
+					{
+						FVector location;
+						location.X = fStartX + x * fXCellSize + fXCellSize / 2;
+						location.Y = fStartY + y * fYCellSize + fYCellSize / 2;
+						location.Z = GetActorLocation().Z;
+						
+
+
+						FHitResult OutHit;
+						FVector TraceStart(location.X, location.Y, GetActorLocation().Z + GenerationMaxZFromActorZ + 5.0f);
+						FVector TraceEnd(location.X, location.Y, GetActorLocation().Z - 5.0f);
+						FCollisionQueryParams CollisionParams;
+
+						if (GetWorld()->LineTraceSingleByChannel(OutHit, TraceStart, TraceEnd, ECC_Visibility, CollisionParams))
+						{
+							if (OutHit.bBlockingHit)
+							{
+								location.Z = OutHit.ImpactPoint.Z;
+							}
+						}
+
+
+
+						FTransform transform = FTransform(FRotator(0, 0, 0), location, FVector(1, 1, 1));
+
+						vObjectsToSpawn[k].pOwner->ProcessEvent( vObjectsToSpawn[k].pFunction, &transform);
+
+						fFullProb += vObjectsToSpawn[k].fProbabilityToSpawn;
+
+						break;
+					}
+					
+					fFullProb += vObjectsToSpawn[k].fProbabilityToSpawn;
+				}
 			}
 		}
-	}*/
+	}
 }
 
 #if WITH_EDITOR
@@ -1252,7 +1306,7 @@ float AFWGen::pickVertexMaterial(double height, std::uniform_real_distribution<f
 	return fVertexColor;
 }
 
-void AFWGen::generateChunk(std::promise<bool>&& promise, long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter)
+AFWGChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter)
 {
 	// Generation setup
 
@@ -1311,8 +1365,11 @@ void AFWGen::generateChunk(std::promise<bool>&& promise, long long iX, long long
 	// Create chunk
 
 	// You don't want to use NewObject for Actors (only UObjects).
-	AFWGChunk* pNewChunk = NewObject<AFWGChunk>(GetTransientPackage(), MakeUniqueObjectName(this, AFWGChunk::StaticClass(), "Chunk_"));
-	//AFWGChunk* pNewChunk = GetWorld()->SpawnActor<AFWGChunk>(AFWGChunk::StaticClass(), FTransform(FRotator(0, 0, 0), FVector(0, 0, 0), FVector(1, 1, 1)));
+	//AFWGChunk* pNewChunk = NewObject<AFWGChunk>(GetTransientPackage(), MakeUniqueObjectName(this, AFWGChunk::StaticClass(), "Chunk_"));
+	FActorSpawnParameters params;
+	params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	AFWGChunk* pNewChunk = GetWorld()->SpawnActor<AFWGChunk>(AFWGChunk::StaticClass(), FTransform(FRotator(0, 0, 0), FVector(0, 0, 0), FVector(1, 1, 1)), params);
 	pNewChunk->setInit(iX, iY, iSectionIndex, bAroundCenter);
 	pNewChunk->setChunkSize(DivideChunkXCount, DivideChunkYCount);
 
@@ -1460,20 +1517,18 @@ void AFWGen::generateChunk(std::promise<bool>&& promise, long long iX, long long
 
 	pNewChunk->iMaxZVertexIndex = iMaxGeneratedZIndex;
 
-	//pProcMeshComponent->CreateMeshSection_LinearColor(iSectionIndex, pNewChunk->vVertices, pNewChunk->vTriangles, pNewChunk->vNormals,
-	//	pNewChunk->vUV0, pNewChunk->vVertexColors, pNewChunk->vTangents, true);
+	pProcMeshComponent->CreateMeshSection_LinearColor(iSectionIndex, pNewChunk->vVertices, pNewChunk->vTriangles, pNewChunk->vNormals,
+		pNewChunk->vUV0, pNewChunk->vVertexColors, pNewChunk->vTangents, true);
 
-	//// Set material
-	//if (GroundMaterial)
-	//{
-	//	pProcMeshComponent->SetMaterial(iSectionIndex, GroundMaterial);
-	//}
+	// Set material
+	if (GroundMaterial)
+	{
+		pProcMeshComponent->SetMaterial(iSectionIndex, GroundMaterial);
+	}
 
-	//pNewChunk->setMeshSection(pProcMeshComponent->GetProcMeshSection(iSectionIndex));
+	pNewChunk->setMeshSection(pProcMeshComponent->GetProcMeshSection(iSectionIndex));
 
-	pChunkMap->addChunk(pNewChunk);
-
-	promise.set_value(true);
+	return pNewChunk;
 }
 
 #if WITH_EDITOR

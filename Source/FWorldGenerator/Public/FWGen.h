@@ -14,7 +14,6 @@
 // STL
 #include <vector>
 #include <random>
-#include <future>
 #include <thread>
 
 // Custom
@@ -49,6 +48,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		void          UnBindFunctionToSpawn(FString FunctionName);
+
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		void          AddOverlapToActorClass(UClass* OverlapToClass);
+
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		void          RemoveOverlapToActorClass(UClass* OverlapToClass);
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		void          GenerateWorld();
@@ -330,7 +335,7 @@ protected:
 
 private:
 
-	void  generateChunk            (std::promise<bool>&& promise, long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter);
+	AFWGChunk*  generateChunk       (long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter);
 	void  generateSeed             ();
 	float pickVertexMaterial       (double height, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
 	void  blendWorldMaterialsMore  ();
@@ -345,6 +350,7 @@ private:
 #endif // WITH_EDITOR
 
 	std::vector<FWGCallback>  vObjectsToSpawn;
+	std::vector<FString>      vOverlapToClasses;
 
 
 	UPROPERTY()

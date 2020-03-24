@@ -16,9 +16,9 @@ AFWGChunk::AFWGChunk()
 {
 	pTriggerBox = CreateDefaultSubobject<UBoxComponent>(MakeUniqueObjectName(this, UBoxComponent::StaticClass(), "Trigger"));
 	pTriggerBox->SetupAttachment(RootComponent);
-	pTriggerBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	pTriggerBox->SetGenerateOverlapEvents(true);
-	pTriggerBox->BodyInstance.SetCollisionProfileName(TEXT("Pawn"));
+	pTriggerBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//pTriggerBox->SetGenerateOverlapEvents(true);
+	pTriggerBox->BodyInstance.SetCollisionProfileName(TEXT("OverlapAll"));
 	
 	// need to have this on BeginPlay because here they can cause some problems when working with blueprints
 	//pTriggerBox->OnComponentBeginOverlap.AddDynamic(this, &AFWGChunk::OnBeginOverlap);
@@ -53,6 +53,11 @@ void AFWGChunk::setChunkSize(int32 iXCount, int32 iYCount)
 	{
 		vChunkCells[i].resize(iXCount);
 	}
+}
+
+void AFWGChunk::setOverlapToActors(std::vector<FString> vClasses)
+{
+	vClassesToOverlap = vClasses;
 }
 
 void AFWGChunk::clearChunk()
@@ -92,7 +97,15 @@ void AFWGChunk::OnBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* Othe
 {
 	if ( (OtherActor != nullptr ) && (OtherActor != this) && ( OtherComp != nullptr ) )  
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Overlap Begin"));
+		for (size_t i = 0; i < vClassesToOverlap.size(); i++)
+		{
+			if (OtherActor->GetClass()->GetName() == vClassesToOverlap[i])
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Overlap Begin"));
+
+				break;
+			}
+		}
 	}
 }
 
@@ -100,6 +113,14 @@ void AFWGChunk::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherA
 {
 	if ( (OtherActor != nullptr ) && (OtherActor != this) && ( OtherComp != nullptr ) ) 
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Overlap End"));
+		for (size_t i = 0; i < vClassesToOverlap.size(); i++)
+		{
+			if (OtherActor->GetClass()->GetName() == vClassesToOverlap[i])
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Overlap End"));
+
+				break;
+			}
+		}
 	}
 }

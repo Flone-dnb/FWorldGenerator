@@ -102,6 +102,10 @@ If you want your terrain to have only one material then you can just connect you
 To use the generator just place an object of the <b>FWGen</b> class (search in the Modes tab in UE) in your level and configure its details. Don't forget to enable Complex Preview if you want to see how it looks.<br>
 To generate the world in the runtime you need to call the <b>GenerateWorld()</b> function from this object.
 
+# Load/unload chunks logic
+
+Chunks of the world will be loaded and unloaded depending on where the player is going. But before calling GenerateWorld() you need to call AddOverlapToActorClass() function and add a class that will be considered as a player. You may add more than one class. Use RemoveOverlapToActorClass() to remove classes from considered as a player.
+
 # How to spawn custom objects in world randomly
 
 If you want FWorldGenerator to spawn your custom objects in the world such as trees, then you need to call BindFunctionToSpawn function and pass a name of the function which will be called on GenerateWorld() and the parameter of this function will be position in which you will need to spawn an object by yourself.
@@ -114,8 +118,12 @@ If you want FWorldGenerator to spawn your custom objects in the world such as tr
 "Function Name" should be a function that accepts Transform as the only parameter.
 <p align="center">
   <img width="700" height="400" src="pics/Example BindFunctionToSpawn 1.jpg">
+</p>
+And here is the example of how you want to spawn your actors:
+<p align="center">
   <img width="700" height="400" src="pics/Example BindFunctionToSpawn 2.jpg">
 </p>
+
 <br>
 You need to control your probabilities manually, so that the probabilities of different objects add up to 1.0.
 

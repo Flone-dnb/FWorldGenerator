@@ -29,6 +29,7 @@ public:
 
 	void setInit(long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter);
 	void setChunkSize(int32 iXCount, int32 iYCount);
+	void setOverlapToActors(std::vector<FString> vClasses);
 	void clearChunk();
 	void setMeshSection(FProcMeshSection* pMeshSection);
 
@@ -72,6 +73,9 @@ public:
 protected:
 
 	virtual void BeginPlay() override;
+
+
+	std::vector<FString>      vClassesToOverlap;
 
 	bool                      bAroundCenter;
 };
