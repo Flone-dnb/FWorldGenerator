@@ -1,4 +1,8 @@
-﻿# Parameters
+﻿# FWorldGenerator
+
+PLEASE, read this fully to avoid any mistakes.
+
+# Parameters
 
 You can configure the generator's parameters in the details tab (or through the "set" functions of the generator - see below).<br>
 <br>
@@ -113,6 +117,7 @@ If you want FWorldGenerator to spawn your custom objects in the world such as tr
 <ul>
     <li><b>Function Owner</b> - class in which the function is defined.</li>
     <li><b>Function Name</b> - name of the function which will be called. In this function, you will spawn your object in the world.</li>
+    <li><b>Layer</b> - Just like in Materials, the material layer can be 0.0f (grass, for example), 0.5f (rock, for example), 1.0f (snow, for example). If you want to spawn a grass mesh then you should probably set this value to 0.0f.</li>
     <li><b>Probability To Spawn</b> - probability from 0.0 to 1.0 with which this function will be called (on every chunk cell). See "Spawning Objects" above.</li>
     <li><b>Is Blocking</b> - should the objects of this class "block" the cell on which they are spawn so that no other object will be spawn on this cell? For example, a grass object usually should not block the cell.</li>
 </ul>
@@ -128,7 +133,7 @@ And here is the example of how you want to spawn your actors:
 </p>
 
 <br>
-You need to control your probabilities manually, so that the probabilities of different objects add up to 1.0.
+You need to control the probabilities of each layer manually so that the probabilities of one layer add up to 1.0. And so you will have a probability of 3.0 in total (for 3 layers).
 
 # Functions
 

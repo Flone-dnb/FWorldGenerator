@@ -111,12 +111,14 @@ AFWGen::~AFWGen()
 	pProcMeshComponent->DestroyComponent();
 }
 
-bool AFWGen::BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName, float ProbabilityToSpawn)
+bool AFWGen::BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName,  float Layer, float ProbabilityToSpawn, bool IsBlocking)
 {
 	FWGCallback callback;
 
 	callback.pOwner = FunctionOwner;
 	callback.fProbabilityToSpawn = ProbabilityToSpawn;
+	callback.bIsBlocking = IsBlocking;
+	callback.fLayer = Layer;
 
 	for ( TFieldIterator<UFunction> FIT ( FunctionOwner->GetClass(), EFieldIteratorFlags::IncludeSuper ); FIT; ++FIT)
 	{
@@ -266,23 +268,6 @@ void AFWGen::GenerateWorld()
 #if WITH_EDITOR
 		FlushPersistentDebugLines(GetWorld());
 #endif // WITH_EDITOR
-
-		/*for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
-		{
-			if (!pChunkMap->vChunks[i]->pTriggerBox->IsValidLowLevel())
-			{
-				continue;
-			}
-
-			if (pChunkMap->vChunks[i]->pTriggerBox->IsPendingKill())
-			{
-				continue;
-			}
-
-			pChunkMap->vChunks[i]->pTriggerBox->DestroyComponent();
-		}*/
-
-
 
 		for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
 		{
@@ -558,59 +543,116 @@ void AFWGen::spawnObjects()
 		float fStartX = fChunkX - (ChunkPieceColumnCount * ChunkPieceSizeX) / 2;
 		float fStartY = fChunkY - (ChunkPieceRowCount * ChunkPieceSizeY) / 2;
 
-		float fXCellSize = ChunkPieceColumnCount * ChunkPieceSizeX;
-		float fYCellSize = ChunkPieceRowCount    * ChunkPieceSizeY;
+		float fXCellSize = ChunkPieceColumnCount * ChunkPieceSizeX / DivideChunkXCount;
+		float fYCellSize = ChunkPieceRowCount    * ChunkPieceSizeY / DivideChunkYCount;
+
+
+		// Divide all object to 3 layers.
+
+		std::vector<FWGCallback> vFirstLayer;
+		std::vector<FWGCallback> vSecondLayer;
+		std::vector<FWGCallback> vThirdLayer;
+
+		for (size_t i = 0; i < vObjectsToSpawn.size(); i++)
+		{
+			if (areEqual(vObjectsToSpawn[i].fLayer, 0.0f, 0.1f))
+			{
+				vFirstLayer.push_back(vObjectsToSpawn[i]);
+			}
+			else if (areEqual(vObjectsToSpawn[i].fLayer, 0.5f, 0.1f))
+			{
+				vSecondLayer.push_back(vObjectsToSpawn[i]);
+			}
+			else
+			{
+				vThirdLayer.push_back(vObjectsToSpawn[i]);
+			}
+		}
+
+
 
 
 		for (size_t y = 0; y < pChunkMap->vChunks[i]->vChunkCells.size(); y++)
 		{
 			for (size_t x = 0; x < pChunkMap->vChunks[i]->vChunkCells[y].size(); x++)
 			{
+				FVector location;
+				location.X = fStartX + x * fXCellSize + fXCellSize / 2;
+				location.Y = fStartY + y * fYCellSize + fYCellSize / 2;
+				location.Z = GetActorLocation().Z;
+
+
+				FHitResult OutHit;
+				FVector TraceStart(location.X, location.Y, GetActorLocation().Z + GenerationMaxZFromActorZ + 5.0f);
+				FVector TraceEnd(location.X, location.Y, GetActorLocation().Z - 5.0f);
+				FCollisionQueryParams CollisionParams;
+
+				if (GetWorld()->LineTraceSingleByChannel(OutHit, TraceStart, TraceEnd, ECC_Visibility, CollisionParams))
+				{
+					if (OutHit.bBlockingHit)
+					{
+						location.Z = OutHit.ImpactPoint.Z;
+					}
+				}
+
+
+				std::vector<FWGCallback>* pCurrentLayer = nullptr;
+
+
+				if (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * ZWaterLevelInWorld)
+				{
+					continue;
+				}
+
+				if (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * FirstMaterialMaxRelativeHeight)
+				{
+					// First layer.
+
+					pCurrentLayer = &vFirstLayer;
+				}
+				else if (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * SecondMaterialMaxRelativeHeight)
+				{
+					// Second layer.
+
+					pCurrentLayer = &vSecondLayer;
+				}
+				else
+				{
+					// Third layer.
+
+					pCurrentLayer = &vThirdLayer;
+				}
+
+
 				float fGeneratedProbForThisCell = urd(gen);
 				float fFullProb = 0.0f;
 
-				for (size_t k = 0; k < vObjectsToSpawn.size(); k++)
+				for (size_t k = 0; k < pCurrentLayer->size(); k++)
 				{
 					float fNextValue = 1.0f - fFullProb;
-					if (k != vObjectsToSpawn.size() - 1)
+					if (k != pCurrentLayer->size() - 1)
 					{
-						fNextValue =  vObjectsToSpawn[k].fProbabilityToSpawn;
+						fNextValue =  pCurrentLayer->operator[](k).fProbabilityToSpawn;
 					}
 
 					if ((fGeneratedProbForThisCell > fFullProb) && (fGeneratedProbForThisCell <= fFullProb + fNextValue) )
 					{
-						FVector location;
-						location.X = fStartX + x * fXCellSize + fXCellSize / 2;
-						location.Y = fStartY + y * fYCellSize + fYCellSize / 2;
-						location.Z = GetActorLocation().Z;
-						
-
-
-						FHitResult OutHit;
-						FVector TraceStart(location.X, location.Y, GetActorLocation().Z + GenerationMaxZFromActorZ + 5.0f);
-						FVector TraceEnd(location.X, location.Y, GetActorLocation().Z - 5.0f);
-						FCollisionQueryParams CollisionParams;
-
-						if (GetWorld()->LineTraceSingleByChannel(OutHit, TraceStart, TraceEnd, ECC_Visibility, CollisionParams))
+						if (pCurrentLayer->operator[](k).bIsBlocking)
 						{
-							if (OutHit.bBlockingHit)
-							{
-								location.Z = OutHit.ImpactPoint.Z;
-							}
+							pChunkMap->vChunks[i]->vChunkCells[y][x] = true;
 						}
-
 
 
 						FTransform transform = FTransform(FRotator(0, 0, 0), location, FVector(1, 1, 1));
 
-						vObjectsToSpawn[k].pOwner->ProcessEvent( vObjectsToSpawn[k].pFunction, &transform);
+						pCurrentLayer->operator[](k).pOwner->ProcessEvent( pCurrentLayer->operator[](k).pFunction, &transform);
 
-						fFullProb += vObjectsToSpawn[k].fProbabilityToSpawn;
+						fFullProb += pCurrentLayer->operator[](k).fProbabilityToSpawn;
 
 						break;
 					}
 					
-					fFullProb += vObjectsToSpawn[k].fProbabilityToSpawn;
+					fFullProb += pCurrentLayer->operator[](k).fProbabilityToSpawn;
 				}
 			}
 		}

@@ -44,7 +44,7 @@ public:
 	~AFWGen();
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
-		bool          BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName, float ProbabilityToSpawn);
+		bool          BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName, float Layer, float ProbabilityToSpawn, bool IsBlocking);
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		void          UnBindFunctionToSpawn(FString FunctionName);
@@ -335,7 +335,7 @@ protected:
 
 private:
 
-	AFWGChunk*  generateChunk       (long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter);
+	AFWGChunk*  generateChunk      (long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter);
 	void  generateSeed             ();
 	float pickVertexMaterial       (double height, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
 	void  blendWorldMaterialsMore  ();
@@ -373,10 +373,14 @@ private:
 class FWGCallback
 {
 public:
-	UObject* pOwner;
+	UObject*   pOwner;
 	UFunction* pFunction;
-	float fProbabilityToSpawn;
-	FString sFunctionName;
+
+	float      fLayer;
+	float      fProbabilityToSpawn;
+	FString    sFunctionName;
+
+	bool       bIsBlocking;
 };
 
 // --------------------------------------------------------------------------------------------------------
