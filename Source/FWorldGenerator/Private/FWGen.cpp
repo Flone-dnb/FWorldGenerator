@@ -547,15 +547,24 @@ void AFWGen::spawnObjects()
 		float fYCellSize = ChunkPieceRowCount    * ChunkPieceSizeY / DivideChunkYCount;
 
 
-		// Divide all object to 3 layers.
+		std::uniform_real_distribution<float> offsetByX(-fXCellSize * MaxOffsetByX, fXCellSize * MaxOffsetByX);
+		std::uniform_real_distribution<float> offsetByY(-fYCellSize * MaxOffsetByY, fYCellSize * MaxOffsetByY);
 
+
+		// Divide all object into 4 layers.
+
+		std::vector<FWGCallback> vWaterLayer;
 		std::vector<FWGCallback> vFirstLayer;
 		std::vector<FWGCallback> vSecondLayer;
 		std::vector<FWGCallback> vThirdLayer;
 
 		for (size_t i = 0; i < vObjectsToSpawn.size(); i++)
 		{
-			if (areEqual(vObjectsToSpawn[i].fLayer, 0.0f, 0.1f))
+			if (areEqual(vObjectsToSpawn[i].fLayer, -0.5f, 0.1f))
+			{
+				vWaterLayer.push_back(vObjectsToSpawn[i]);
+			}
+			else if (areEqual(vObjectsToSpawn[i].fLayer, 0.0f, 0.1f))
 			{
 				vFirstLayer.push_back(vObjectsToSpawn[i]);
 			}
@@ -571,7 +580,6 @@ void AFWGen::spawnObjects()
 
 
 
-
 		for (size_t y = 0; y < pChunkMap->vChunks[i]->vChunkCells.size(); y++)
 		{
 			for (size_t x = 0; x < pChunkMap->vChunks[i]->vChunkCells[y].size(); x++)
@@ -580,6 +588,10 @@ void AFWGen::spawnObjects()
 				location.X = fStartX + x * fXCellSize + fXCellSize / 2;
 				location.Y = fStartY + y * fYCellSize + fYCellSize / 2;
 				location.Z = GetActorLocation().Z;
+
+
+				location.X += offsetByX(gen);
+				location.Y += offsetByY(gen);
 
 
 				FHitResult OutHit;
@@ -601,10 +613,11 @@ void AFWGen::spawnObjects()
 
 				if (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * ZWaterLevelInWorld)
 				{
-					continue;
-				}
+					// Water layer.
 
-				if (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * FirstMaterialMaxRelativeHeight)
+					pCurrentLayer = &vWaterLayer;
+				}
+				else if (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * FirstMaterialMaxRelativeHeight)
 				{
 					// First layer.
 
@@ -1701,5 +1714,33 @@ bool AFWGen::SetDivideChunkYCount(int32 DivideChunkYCount)
 		this->DivideChunkYCount = DivideChunkYCount;
 
 		return false;
+	}
+}
+
+bool AFWGen::SetMaxOffsetByX(float fMaxOffsetByX)
+{
+	if (fMaxOffsetByX >= 0.0f && fMaxOffsetByX <= 1.0f)
+	{
+		MaxOffsetByX = fMaxOffsetByX;
+
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
+bool AFWGen::SetMaxOffsetByY(int32 fMaxOffsetByY)
+{
+	if (fMaxOffsetByY >= 0.0f && fMaxOffsetByY <= 1.0f)
+	{
+		MaxOffsetByY = fMaxOffsetByY;
+
+		return false;
+	}
+	else
+	{
+		return true;
 	}
 }

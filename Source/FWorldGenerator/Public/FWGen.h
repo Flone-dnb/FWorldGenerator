@@ -176,6 +176,12 @@ public:
 		UFUNCTION(BlueprintCallable, Category = "Spawning Objects")
 			bool SetDivideChunkYCount(int32 DivideChunkYCount);
 
+		UFUNCTION(BlueprintCallable, Category = "Spawning Objects")
+			bool SetMaxOffsetByX(float fMaxOffsetByX);
+
+		UFUNCTION(BlueprintCallable, Category = "Spawning Objects")
+			bool SetMaxOffsetByY(int32 fMaxOffsetByY);
+
 
 #if WITH_EDITOR
 	virtual void  PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -310,6 +316,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
 		int32 DivideChunkYCount = 300;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
+		float MaxOffsetByX = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
+		float MaxOffsetByY = 1.0f;
+
 
 protected:
 

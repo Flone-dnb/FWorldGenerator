@@ -81,6 +81,8 @@ You can configure the generator's parameters in the details tab (or through the 
 <ul>
     <li><b>Divide Chunk X Count</b> (valid values range: [1, ...]) - every chunk is divided into cells, any cell may have an object in it. This parameter determines the X size of the cell. For example: if your "Chunk Piece Size X" = 300 and "Chunk Piece Column Count" = 300, then your chunk X size will be 90000 and if you set "Divide Chunk X Count" to the 300 then your chunk will have 300 cells by X-axis.</li>
     <li><b>Divide Chunk Y Count</b> (valid values range: [1, ...]) - every chunk is divided into cells, any cell may have an object in it. This parameter determines the Y size of the cell. For example: if your "Chunk Piece Size Y" = 300 and "Chunk Piece Row Count" = 300, then your chunk Y size will be 90000 and if you set "Divide Chunk Y Count" to the 300 then your chunk will have 300 cells by Y-axis.</li>
+    <li><b>Max Offset By X</b> (valid values range: [0.0, 1.0]) - determines the random offset (in location) by X-axis on spawn, where 1.0 means that the maximum offset can be cell size by X, and 0.5 - half of the cell size by X.</li>
+    <li><b>Max Offset By Y</b> (valid values range: [0.0, 1.0]) - determines the random offset (in location) by Y-axis on spawn, where 1.0 means that the maximum offset can be cell size by Y, and 0.5 - half of the cell size by Y.</li>
 </ul>
 
 # Terrain Material
@@ -117,7 +119,7 @@ If you want FWorldGenerator to spawn your custom objects in the world such as tr
 <ul>
     <li><b>Function Owner</b> - class in which the function is defined.</li>
     <li><b>Function Name</b> - name of the function which will be called. In this function, you will spawn your object in the world.</li>
-    <li><b>Layer</b> - Just like in Materials, the material layer can be 0.0f (grass, for example), 0.5f (rock, for example), 1.0f (snow, for example). If you want to spawn a grass mesh then you should probably set this value to 0.0f.</li>
+    <li><b>Layer</b> - Just like in Materials, the material layer can be 0.0f (grass, for example), 0.5f (rock, for example), 1.0f (snow, for example). If you want to spawn something in water (underwater) then this value should be -0.5f. If you want to spawn a grass mesh then you should probably set this value to 0.0f.</li>
     <li><b>Probability To Spawn</b> - probability from 0.0 to 1.0 with which this function will be called (on every chunk cell). See "Spawning Objects" above.</li>
     <li><b>Is Blocking</b> - should the objects of this class "block" the cell on which they are spawn so that no other object will be spawn on this cell? For example, a grass object usually should not block the cell.</li>
 </ul>
@@ -133,7 +135,7 @@ And here is the example of how you want to spawn your actors:
 </p>
 
 <br>
-You need to control the probabilities of each layer manually so that the probabilities of one layer add up to 1.0. And so you will have a probability of 3.0 in total (for 3 layers).
+You need to control the probabilities of each layer manually so that the probabilities of one layer add up to 1.0. And so you will have a probability of 4.0 in total (for 4 layers).
 
 # Functions
 
