@@ -518,6 +518,7 @@ void AFWGen::spawnObjects()
 	std::mt19937_64 gen(std::random_device{}());
 
 	std::uniform_real_distribution<float> urd(0.0f, 1.0f);
+	std::uniform_real_distribution<float> urd_rotation(-MaxRotation, MaxRotation);
 
 	std::sort(vObjectsToSpawn.begin(), vObjectsToSpawn.end(),
 		[](const FWGCallback& a, const FWGCallback& b) -> bool
@@ -656,7 +657,7 @@ void AFWGen::spawnObjects()
 						}
 
 
-						FTransform transform = FTransform(FRotator(0, 0, 0), location, FVector(1, 1, 1));
+						FTransform transform = FTransform(FRotator(0, 0, urd_rotation(gen)), location, FVector(1, 1, 1));
 
 						pCurrentLayer->operator[](k).pOwner->ProcessEvent( pCurrentLayer->operator[](k).pFunction, &transform);
 
@@ -672,7 +673,22 @@ void AFWGen::spawnObjects()
 	}
 }
 
+bool AFWGen::SetMaxRotation(float fMaxRotation)
+{
+	if (fMaxRotation >= 0.0f)
+	{
+		MaxRotation = fMaxRotation;
+
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
 #if WITH_EDITOR
+
 void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -1731,7 +1747,7 @@ bool AFWGen::SetMaxOffsetByX(float fMaxOffsetByX)
 	}
 }
 
-bool AFWGen::SetMaxOffsetByY(int32 fMaxOffsetByY)
+bool AFWGen::SetMaxOffsetByY(float fMaxOffsetByY)
 {
 	if (fMaxOffsetByY >= 0.0f && fMaxOffsetByY <= 1.0f)
 	{

@@ -180,7 +180,10 @@ public:
 			bool SetMaxOffsetByX(float fMaxOffsetByX);
 
 		UFUNCTION(BlueprintCallable, Category = "Spawning Objects")
-			bool SetMaxOffsetByY(int32 fMaxOffsetByY);
+			bool SetMaxOffsetByY(float fMaxOffsetByY);
+
+		UFUNCTION(BlueprintCallable, Category = "Spawning Objects")
+			bool SetMaxRotation(float fMaxRotation);
 
 
 #if WITH_EDITOR
@@ -322,6 +325,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
 		float MaxOffsetByY = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
+		float MaxRotation = 360.0f;
 
 
 protected:

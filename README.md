@@ -83,6 +83,7 @@ You can configure the generator's parameters in the details tab (or through the 
     <li><b>Divide Chunk Y Count</b> (valid values range: [1, ...]) - every chunk is divided into cells, any cell may have an object in it. This parameter determines the Y size of the cell. For example: if your "Chunk Piece Size Y" = 300 and "Chunk Piece Row Count" = 300, then your chunk Y size will be 90000 and if you set "Divide Chunk Y Count" to the 300 then your chunk will have 300 cells by Y-axis.</li>
     <li><b>Max Offset By X</b> (valid values range: [0.0, 1.0]) - determines the random offset (in location) by X-axis on spawn, where 1.0 means that the maximum offset can be cell size by X, and 0.5 - half of the cell size by X.</li>
     <li><b>Max Offset By Y</b> (valid values range: [0.0, 1.0]) - determines the random offset (in location) by Y-axis on spawn, where 1.0 means that the maximum offset can be cell size by Y, and 0.5 - half of the cell size by Y.</li>
+    <li><b>Max Rotation</b> (valid values range: [0.0, ...]) - determines the maximum random rotation by Z-axis in the range [minus this value; this value].</li>
 </ul>
 
 # Terrain Material
