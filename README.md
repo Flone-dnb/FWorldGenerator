@@ -124,8 +124,9 @@ If you want FWorldGenerator to spawn your custom objects in the world such as tr
     <li><b>Probability To Spawn</b> - probability from 0.0 to 1.0 with which this function will be called (on every chunk cell). See "Spawning Objects" above.</li>
     <li><b>Is Blocking</b> - should the objects of this class "block" the cell on which they are spawn so that no other object will be spawn on this cell? For example, a grass object usually should not block the cell.</li>
 </ul>
-"Function Name" should be a function that accepts Transform as the only parameter.
-Here is the example of how you want to spawn many grass meshes on the terrain:
+"Function Name" should be a function that accepts Transform as the only parameter.<br>
+Here is the example of how you want to spawn many grass meshes on the terrain:<br>
+(click to see in full size)
 <p align="center">
   <img width="800" height="200" src="pics/Example BindFunctionToSpawn 1.png">
 </p>
