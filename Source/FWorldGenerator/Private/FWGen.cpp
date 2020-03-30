@@ -657,7 +657,7 @@ void AFWGen::spawnObjects()
 						}
 
 
-						FTransform transform = FTransform(FRotator(0, 0, urd_rotation(gen)), location, FVector(1, 1, 1));
+						FTransform transform = FTransform(FRotator(0, urd_rotation(gen), 0), location, FVector(1, 1, 1));
 
 						pCurrentLayer->operator[](k).pOwner->ProcessEvent( pCurrentLayer->operator[](k).pFunction, &transform);
 

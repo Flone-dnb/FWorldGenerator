@@ -125,12 +125,12 @@ If you want FWorldGenerator to spawn your custom objects in the world such as tr
     <li><b>Is Blocking</b> - should the objects of this class "block" the cell on which they are spawn so that no other object will be spawn on this cell? For example, a grass object usually should not block the cell.</li>
 </ul>
 "Function Name" should be a function that accepts Transform as the only parameter.
+Here is the example of how you want to spawn many grass meshes on the terrain:
 <p align="center">
-  <img width="800" height="450" src="pics/Example BindFunctionToSpawn 1.jpg">
+  <img width="800" height="450" src="pics/Example BindFunctionToSpawn 1.png">
 </p>
-And here is the example of how you want to spawn your actors:
+And Spawn Grass function:
 <br>
-(note that Collision Handling Override is set to "Always Spawn, Ignore Collisions")
 <p align="center">
   <img width="800" height="450" src="pics/Example BindFunctionToSpawn 2.jpg">
 </p>
