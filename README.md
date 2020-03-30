@@ -127,7 +127,7 @@ If you want FWorldGenerator to spawn your custom objects in the world such as tr
 "Function Name" should be a function that accepts Transform as the only parameter.
 Here is the example of how you want to spawn many grass meshes on the terrain:
 <p align="center">
-  <img width="800" height="450" src="pics/Example BindFunctionToSpawn 1.png">
+  <img width="800" height="200" src="pics/Example BindFunctionToSpawn 1.png">
 </p>
 And Spawn Grass function:
 <br>
