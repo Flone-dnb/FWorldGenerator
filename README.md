@@ -4,7 +4,7 @@ PLEASE, read this fully to avoid any mistakes.
 
 # Parameters
 
-You can configure the generator's parameters in the details tab (or through the "set" functions of the generator - see below).<br>
+You can configure the generator's parameters in the details tab (or through the "set" functions of the generator - see below).
 <br>
 
 <h3>Preview</h3>
