@@ -84,6 +84,8 @@ You can configure the generator's parameters in the details tab (or through the 
     <li><b>Max Offset By X</b> (valid values range: [0.0, 1.0]) - determines the random offset (in location) by X-axis on spawn, where 1.0 means that the maximum offset can be cell size by X, and 0.5 - half of the cell size by X.</li>
     <li><b>Max Offset By Y</b> (valid values range: [0.0, 1.0]) - determines the random offset (in location) by Y-axis on spawn, where 1.0 means that the maximum offset can be cell size by Y, and 0.5 - half of the cell size by Y.</li>
     <li><b>Max Rotation</b> (valid values range: [0.0, ...]) - determines the maximum random rotation by Z-axis in the range [minus this value; this value].</li>
+    <li><b>Max Z Diff In Cell</b> - if the difference of the Z coordinates on the bound of the cell will be more than this value, then the cell will not be used (and nothing will be spawn in it).</li>
+</ul>
 </ul>
 
 # Terrain Material
@@ -136,8 +138,9 @@ And Spawn Grass function:
   <img width="800" height="450" src="pics/Example BindFunctionToSpawn 2.jpg">
 </p>
 
+Please note that if you want to call GenerateWorld() again you need to delete all actors that you've spawned.
 <br>
-You need to control the probabilities of each layer manually so that the probabilities of one layer add up to 1.0. And so you will have a probability of 4.0 in total (for 4 layers).
+Also, you need to control the probabilities of each layer manually so that the probabilities of one layer add up to 1.0. And so you will have a probability of 4.0 in total (for 4 layers).
 
 # Functions
 

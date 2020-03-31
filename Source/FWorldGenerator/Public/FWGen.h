@@ -185,6 +185,9 @@ public:
 		UFUNCTION(BlueprintCallable, Category = "Spawning Objects")
 			bool SetMaxRotation(float fMaxRotation);
 
+		UFUNCTION(BlueprintCallable, Category = "Spawning Objects")
+			void SetMaxZDiffInCell(float fNewMaxZDiffInCell);
+
 
 #if WITH_EDITOR
 	virtual void  PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -329,6 +332,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
 		float MaxRotation = 360.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
+		float MaxZDiffInCell = 40.0f;
 
 protected:
 

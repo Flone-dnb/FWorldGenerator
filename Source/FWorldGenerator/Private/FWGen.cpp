@@ -600,6 +600,7 @@ void AFWGen::spawnObjects()
 				FVector TraceEnd(location.X, location.Y, GetActorLocation().Z - 5.0f);
 				FCollisionQueryParams CollisionParams;
 
+				// Get Z.
 				if (GetWorld()->LineTraceSingleByChannel(OutHit, TraceStart, TraceEnd, ECC_Visibility, CollisionParams))
 				{
 					if (OutHit.bBlockingHit)
@@ -609,10 +610,72 @@ void AFWGen::spawnObjects()
 				}
 
 
+
+				// Check if this cell is on the steep slope.
+
+				bool bSteepSlope = false;
+
+				std::vector<float> vXOffset;
+				vXOffset.push_back(TraceStart.X + fXCellSize / 2);
+				vXOffset.push_back(TraceStart.X - fXCellSize / 2);
+				
+
+				for (size_t i = 0; i < vXOffset.size(); i++)
+				{
+					TraceStart.X = vXOffset[i];
+					TraceEnd.X   = vXOffset[i];
+
+					if (GetWorld()->LineTraceSingleByChannel(OutHit, TraceStart, TraceEnd, ECC_Visibility, CollisionParams))
+					{
+						if (OutHit.bBlockingHit)
+						{
+							if (fabs(OutHit.ImpactPoint.Z - location.Z) > MaxZDiffInCell)
+							{
+								bSteepSlope = true;
+								break;
+							}
+						}
+					}
+				}
+
+				if (bSteepSlope == false)
+				{
+					std::vector<float> vYOffset;
+					vYOffset.push_back(TraceStart.Y + fYCellSize / 2);
+					vYOffset.push_back(TraceStart.Y - fYCellSize / 2);
+
+					for (size_t i = 0; i < vYOffset.size(); i++)
+					{
+						TraceStart.Y = vYOffset[i];
+						TraceEnd.Y   = vYOffset[i];
+
+						if (GetWorld()->LineTraceSingleByChannel(OutHit, TraceStart, TraceEnd, ECC_Visibility, CollisionParams))
+						{
+							if (OutHit.bBlockingHit)
+							{
+								if (fabs(OutHit.ImpactPoint.Z - location.Z) > MaxZDiffInCell)
+								{
+									bSteepSlope = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+
+				if (bSteepSlope)
+				{
+					pChunkMap->vChunks[i]->vChunkCells[y][x] = true;
+
+					continue;
+				}
+
+
 				std::vector<FWGCallback>* pCurrentLayer = nullptr;
 
 
-				if (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * ZWaterLevelInWorld)
+				if (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * ZWaterLevelInWorld
+					+ GenerationMaxZFromActorZ * 0.01f) // error
 				{
 					// Water layer.
 
@@ -685,6 +748,11 @@ bool AFWGen::SetMaxRotation(float fMaxRotation)
 	{
 		return true;
 	}
+}
+
+void AFWGen::SetMaxZDiffInCell(float fNewMaxZDiffInCell)
+{
+	MaxZDiffInCell = fNewMaxZDiffInCell;
 }
 
 #if WITH_EDITOR
