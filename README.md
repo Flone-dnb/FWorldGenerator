@@ -109,7 +109,8 @@ If you want your terrain to have only one material then you can just connect you
 </ol>
 
 To use the generator just place an object of the <b>FWGen</b> class (search in the Modes tab in UE) in your level and configure its details. Don't forget to enable Complex Preview if you want to see how it looks.<br>
-To generate the world in the runtime you need to call the <b>GenerateWorld()</b> function from this object.
+To generate the world in the runtime you need to call the <b>GenerateWorld()</b> function from this object.<br>
+BE AWARE that generating a world (probably with your custom actors (see below)) can take a while! Don't think that it stuck somewhere or froze, just take your time. For example, generation a world with the default parameters without spawning objects takes about 30-40 sec. on my machine.
 
 # Load/unload chunks logic
 
@@ -137,7 +138,8 @@ And Spawn Grass function:
 <p align="center">
   <img width="800" height="450" src="pics/Example BindFunctionToSpawn 2.jpg">
 </p>
-
+If you want to spawn something which is not like grass or trees (i.e. not through Hierarchical Instanced Static Mesh) then be sure to set the "Always Spawn, Ignore Collisions" option in the Collision Handling Override param in the SpawnActor node OR spawn your actors a little higher than the given transform.
+<br>
 Please note that if you want to call GenerateWorld() again you need to delete all actors that you've spawned.
 <br>
 Also, you need to control the probabilities of each layer manually so that the probabilities of one layer add up to 1.0. And so you will have a probability of 4.0 in total (for 4 layers).
