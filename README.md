@@ -112,7 +112,7 @@ To use the generator just place an object of the <b>FWGen</b> class (search in t
 <br>
 To generate the world in the runtime you need to call the <b>GenerateWorld()</b> function from this object.<br>
 <br>
-BE AWARE that generating a world (probably with your custom actors (see below)) can take a while! Don't think that it stuck somewhere or froze, just take your time. For example, generating a world with the default parameters without spawning objects takes about 30-40 sec. on my machine.
+BE AWARE that generating a world (probably with your custom actors (see below)) can take a while! Don't think that it stuck somewhere or froze, just take your time. For example, generating a world with the default parameters without spawning objects takes about 30-40 sec. (PIE) on my machine.
 
 # Load/unload chunks logic
 
