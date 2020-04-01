@@ -318,10 +318,10 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
-		int32 DivideChunkXCount = 300;
+		int32 DivideChunkXCount = 200;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
-		int32 DivideChunkYCount = 300;
+		int32 DivideChunkYCount = 200;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
 		float MaxOffsetByX = 1.0f;
@@ -333,7 +333,7 @@ public:
 		float MaxRotation = 360.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
-		float MaxZDiffInCell = 40.0f;
+		float MaxZDiffInCell = 50.0f;
 
 protected:
 
