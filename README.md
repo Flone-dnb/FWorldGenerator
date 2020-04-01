@@ -143,6 +143,8 @@ If you want to spawn something which is not like grass or trees (i.e. not throug
 Please note that if you want to call GenerateWorld() again you need to delete all actors that you've spawned.
 <br>
 Also, you need to control the probabilities of each layer manually so that the probabilities of one layer add up to 1.0. And so you will have a probability of 4.0 in total (for 4 layers).
+<br>
+Note, if you are using Hierarchical Instanced Static Mesh Component (like shown in the picture above) and your actors don't have a material, then you should check the Used with Instanced Static Meshes option in the Usage category inside your material.
 
 # Functions
 
