@@ -674,8 +674,8 @@ void AFWGen::spawnObjects()
 				std::vector<FWGCallback>* pCurrentLayer = nullptr;
 
 
-				if (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * ZWaterLevelInWorld
-					+ GenerationMaxZFromActorZ * 0.01f) // error
+				if ( CreateWater && (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * ZWaterLevelInWorld
+					 + GenerationMaxZFromActorZ * 0.01f)) // error
 				{
 					// Water layer.
 
