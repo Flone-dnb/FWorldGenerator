@@ -11,6 +11,9 @@
 // STL
 #include <ctime>
 
+// Custom
+#include "FWGChunk.h"
+
 // External
 #include "PerlinNoise.hpp"
 
@@ -51,7 +54,7 @@ AFWGen::AFWGen()
 
 
 
-	pChunkMap = new FWGenChunkMap();
+	pChunkMap = new FWGenChunkMap(this);
 
 
 
@@ -200,15 +203,24 @@ void AFWGen::GenerateWorld()
 
 				pChunkMap->addChunk(pNewChunk);
 
+				if (x == 0 && y == 0)
+				{
+					pChunkMap->setCurrentChunk(pNewChunk);
+				}
+
 				iSectionIndex++;
 			}
 		}
+
+		iCurrentSectionIndex = iSectionIndex;
 	}
 	else
 	{
 		AFWGChunk* pNewChunk = generateChunk(0, 0, 0, false);
 
 		pChunkMap->addChunk(pNewChunk);
+
+		iCurrentSectionIndex = 1;
 	}
 
 	if (ApplyGroundMaterialBlend)
@@ -235,12 +247,12 @@ void AFWGen::GenerateWorld()
 	WaterPlane->SetWorldLocation(FVector(
 		GetActorLocation().X,
 		GetActorLocation().Y,
-		GetActorLocation().Z + ((GenerationMaxZFromActorZ - GetActorLocation().Z) * ZWaterLevelInWorld)
+		GetActorLocation().Z + (GenerationMaxZFromActorZ * ZWaterLevelInWorld)
 	));
 
 	WaterPlane->SetWorldScale3D(FVector(
-		((ChunkPieceColumnCount)*ChunkPieceSizeX) * (WaterSize / 100.0f),
-		((ChunkPieceRowCount)*ChunkPieceSizeY) * (WaterSize / 100.0f),
+		(ChunkPieceColumnCount*ChunkPieceSizeX) * (WaterSize / 100.0f),
+		(ChunkPieceRowCount*ChunkPieceSizeY) * (WaterSize / 100.0f),
 		0.1f
 	));
 
@@ -311,12 +323,27 @@ void AFWGen::GenerateWorld()
 	}
 }
 
-void AFWGen::blendWorldMaterialsMore()
+void AFWGen::blendWorldMaterialsMore(AFWGChunk* pOnlyForThisChunk)
 {
 	std::mt19937_64 gen(std::random_device{}());
 	std::uniform_real_distribution<float> urd(0.0f, 1.0f);
 
-	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+	std::vector<AFWGChunk*> vChunkToProcess;
+
+	if (pOnlyForThisChunk)
+	{
+		vChunkToProcess.push_back(pOnlyForThisChunk);
+	}
+	else
+	{
+		for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+		{
+			vChunkToProcess.push_back(pChunkMap->vChunks[i]);
+		}
+	}
+
+
+	for (size_t i = 0; i < vChunkToProcess.size(); i++)
 	{
 		size_t iVertexIndex = 0;
 
@@ -340,7 +367,7 @@ void AFWGen::blendWorldMaterialsMore()
 					&& (iColumn >= 3) && ((iColumn + 3) < (ChunkPieceColumnCount + 1)))
 				{
 					if (SecondMaterialUnderWater &&
-						(pChunkMap->vChunks[i]->vVertices[iVertexIndex].Z <= (GetActorLocation().Z + (GenerationMaxZFromActorZ * (ZWaterLevelInWorld + 0.008f)))))
+						(vChunkToProcess[i]->vVertices[iVertexIndex].Z <= (GetActorLocation().Z + (GenerationMaxZFromActorZ * (ZWaterLevelInWorld + 0.008f)))))
 					{
 						// Under water material - don't touch.
 					}
@@ -350,18 +377,18 @@ void AFWGen::blendWorldMaterialsMore()
 						bool bSecondLayerWithOtherColor = false;
 						bool bThirdLayerWithOtherColor  = false;
 
-						if ((pChunkMap->vChunks[i]->vLayerIndex[iVertexIndex] == 1)
-							&& (areEqual(pChunkMap->vChunks[i]->vVertexColors[iVertexIndex].A, 0.0f, 0.1f) == false))
+						if ((vChunkToProcess[i]->vLayerIndex[iVertexIndex] == 1)
+							&& (areEqual(vChunkToProcess[i]->vVertexColors[iVertexIndex].A, 0.0f, 0.1f) == false))
 						{
 							bFirstLayerWithOtherColor = true;
 						}
-						else if ((pChunkMap->vChunks[i]->vLayerIndex[iVertexIndex] == 2)
-							&& (areEqual(pChunkMap->vChunks[i]->vVertexColors[iVertexIndex].A, 0.5f, 0.1f) == false))
+						else if ((vChunkToProcess[i]->vLayerIndex[iVertexIndex] == 2)
+							&& (areEqual(vChunkToProcess[i]->vVertexColors[iVertexIndex].A, 0.5f, 0.1f) == false))
 						{
 							bSecondLayerWithOtherColor = true;
 						}
-						else if ((pChunkMap->vChunks[i]->vLayerIndex[iVertexIndex] == 3)
-							&& (areEqual(pChunkMap->vChunks[i]->vVertexColors[iVertexIndex].A, 1.0f, 0.1f) == false))
+						else if ((vChunkToProcess[i]->vLayerIndex[iVertexIndex] == 3)
+							&& (areEqual(vChunkToProcess[i]->vVertexColors[iVertexIndex].A, 1.0f, 0.1f) == false))
 						{
 							bThirdLayerWithOtherColor = true;
 						}
@@ -385,7 +412,7 @@ void AFWGen::blendWorldMaterialsMore()
 								{
 									if (urd(gen) <= IncreasedMaterialBlendProbability)
 									{
-										pChunkMap->vChunks[i]->vVertexColors[iVertexIndex + iIndexY + iIndexX] = pChunkMap->vChunks[i]->vVertexColors[iVertexIndex];
+										vChunkToProcess[i]->vVertexColors[iVertexIndex + iIndexY + iIndexX] = vChunkToProcess[i]->vVertexColors[iVertexIndex];
 									}
 								}
 							}
@@ -398,7 +425,7 @@ void AFWGen::blendWorldMaterialsMore()
 								{
 									if (urd(gen) <= (IncreasedMaterialBlendProbability / 2))
 									{
-										pChunkMap->vChunks[i]->vVertexColors[iVertexIndex + iIndexY + iIndexX] = pChunkMap->vChunks[i]->vVertexColors[iVertexIndex];
+										vChunkToProcess[i]->vVertexColors[iVertexIndex + iIndexY + iIndexX] = vChunkToProcess[i]->vVertexColors[iVertexIndex];
 									}
 								}
 							}
@@ -414,13 +441,27 @@ void AFWGen::blendWorldMaterialsMore()
 	}
 }
 
-void AFWGen::applySlopeDependentBlend()
+void AFWGen::applySlopeDependentBlend(AFWGChunk* pOnlyForThisChunk)
 {
 	float fSteepSlopeMinHeightDiff = GenerationMaxZFromActorZ * MinSlopeHeightMultiplier;
 
-	for (size_t iChunk = 0; iChunk < pChunkMap->vChunks.size(); iChunk++)
+	std::vector<AFWGChunk*> vChunksToProcess;
+
+	if (pOnlyForThisChunk)
 	{
-		std::vector<bool> vProcessedVertices(pChunkMap->vChunks[iChunk]->vVertices.Num());
+		vChunksToProcess.push_back(pOnlyForThisChunk);
+	}
+	else
+	{
+		for (size_t iChunk = 0; iChunk < pChunkMap->vChunks.size(); iChunk++)
+		{
+			vChunksToProcess.push_back(pChunkMap->vChunks[iChunk]);
+		}
+	}
+
+	for (size_t iChunk = 0; iChunk < vChunksToProcess.size(); iChunk++)
+	{
+		std::vector<bool> vProcessedVertices(vChunksToProcess[iChunk]->vVertices.Num());
 		vProcessedVertices[0] = true;
 
 		size_t iVertexIndex = 0;
@@ -461,50 +502,50 @@ void AFWGen::applySlopeDependentBlend()
 					bHasRightPoints = false;
 				}
 
-				float fCurrentVertexZ = pChunkMap->vChunks[iChunk]->vVertices[iVertexIndex].Z;
+				float fCurrentVertexZ = vChunksToProcess[iChunk]->vVertices[iVertexIndex].Z;
 
 				// Process the left points:
 				if (bHasLeftPoints)
 				{
-					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - 1, fSteepSlopeMinHeightDiff);
+					compareHeightDifference(vChunksToProcess[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - 1, fSteepSlopeMinHeightDiff);
 
 					if (bHasTopPoints)
 					{
-						compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - 1 - (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+						compareHeightDifference(vChunksToProcess[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - 1 - (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
 					}
 
 					if (bHasDownPoints)
 					{
-						compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - 1 + (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+						compareHeightDifference(vChunksToProcess[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - 1 + (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
 					}
 				}
 
 				// Process the right points:
 				if (bHasRightPoints)
 				{
-				compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1, fSteepSlopeMinHeightDiff);
+				compareHeightDifference(vChunksToProcess[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1, fSteepSlopeMinHeightDiff);
 
 				if (bHasTopPoints)
 				{
-					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1 - (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+					compareHeightDifference(vChunksToProcess[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1 - (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
 				}
 
 				if (bHasDownPoints)
 				{
-					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1 + (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+					compareHeightDifference(vChunksToProcess[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + 1 + (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
 				}
 				}
 
 				// Top point:
 				if (bHasTopPoints)
 				{
-					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+					compareHeightDifference(vChunksToProcess[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex - (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
 				}
 
 				// Down point:
 				if (bHasDownPoints)
 				{
-					compareHeightDifference(pChunkMap->vChunks[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
+					compareHeightDifference(vChunksToProcess[iChunk], vProcessedVertices, fCurrentVertexZ, iVertexIndex + (ChunkPieceColumnCount + 1), fSteepSlopeMinHeightDiff);
 				}
 
 				iVertexIndex++;
@@ -1511,6 +1552,7 @@ AFWGChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex
 	AFWGChunk* pNewChunk = GetWorld()->SpawnActor<AFWGChunk>(AFWGChunk::StaticClass(), FTransform(FRotator(0, 0, 0), FVector(0, 0, 0), FVector(1, 1, 1)), params);
 	pNewChunk->setInit(iX, iY, iSectionIndex, bAroundCenter);
 	pNewChunk->setChunkSize(DivideChunkXCount, DivideChunkYCount);
+	pNewChunk->setChunkMap(pChunkMap);
 
 
 
@@ -1826,5 +1868,172 @@ bool AFWGen::SetMaxOffsetByY(float fMaxOffsetByY)
 	else
 	{
 		return true;
+	}
+}
+
+FWGenChunkMap::FWGenChunkMap(AFWGen* pGen)
+{
+	pCurrentChunk = nullptr;
+	this->pGen    = pGen;
+}
+
+void FWGenChunkMap::generateAndAddNewChunk(long long iX, long long iY, long long offsetX, long long offsetY)
+{
+	bool bAroundCenter = false;
+
+	if ((iX <= 1) && (iX >= -1) && (iY <= 1) && (iY >= -1))
+	{
+		bAroundCenter = true;
+	}
+
+	if (pGen->WorldSize != -1)
+	{
+		AFWGChunk* pNewChunk = pGen->generateChunk(iX, iY, pGen->iCurrentSectionIndex, bAroundCenter);
+
+		if (pGen->ApplyGroundMaterialBlend)
+		{
+			pGen->blendWorldMaterialsMore(pCurrentChunk);
+		}
+
+		if (pGen->ApplySlopeDependentBlend)
+		{
+			pGen->applySlopeDependentBlend(pCurrentChunk);
+		}
+
+		// Update mesh.
+		pGen->pProcMeshComponent->UpdateMeshSection_LinearColor(pGen->iCurrentSectionIndex, pNewChunk->vVertices, pNewChunk->vNormals,
+			pNewChunk->vUV0, pNewChunk->vVertexColors, pNewChunk->vTangents);
+
+
+
+		// Water Plane
+
+		float fX = pGen->GetActorLocation().X;
+		float fY = pGen->GetActorLocation().Y;
+
+		if (offsetX != 0)
+		{
+			fX += (offsetX * pGen->ChunkPieceColumnCount * pGen->ChunkPieceSizeX);
+		}
+		
+		if (offsetY != 0)
+		{
+			fY += (offsetY * pGen->ChunkPieceRowCount * pGen->ChunkPieceSizeY);
+		}
+
+
+		pGen->WaterPlane->SetWorldLocation(FVector(
+			fX,
+			fY,
+			pGen->GetActorLocation().Z + (pGen->GenerationMaxZFromActorZ * pGen->ZWaterLevelInWorld)
+		));
+
+
+		//pGen->spawnObjects();
+
+		// TODO: unload old chunk.
+
+		pGen->iCurrentSectionIndex++;
+
+		addChunk(pNewChunk);
+	}
+}
+
+void FWGenChunkMap::addChunk(AFWGChunk* pChunk)
+{
+	vChunks.push_back(pChunk);
+}
+
+void FWGenChunkMap::clearChunks()
+{
+	for (size_t i = 0; i < vChunks.size(); i++)
+	{
+		vChunks[i]->clearChunk();
+	}
+}
+
+void FWGenChunkMap::clearWorld(UProceduralMeshComponent* pProcMeshComponent)
+{
+	for (size_t i = 0; i < vChunks.size(); i++)
+	{
+		if (!vChunks[i]->IsValidLowLevel())
+		{
+			continue;;
+		}
+
+		if (vChunks[i]->IsPendingKill())
+		{
+			continue;
+		}
+
+		vChunks[i]->Destroy();
+		vChunks[i] = nullptr;
+	}
+
+	vChunks.clear();
+
+	pProcMeshComponent->ClearAllMeshSections();
+}
+
+void FWGenChunkMap::setCurrentChunk(AFWGChunk* pChunk)
+{
+	if (pCurrentChunk)
+	{
+		long long offsetX = pChunk->iX - pCurrentChunk->iX;
+		long long offsetY = pChunk->iY - pCurrentChunk->iY;
+
+		long long iX = pCurrentChunk->iX;
+		long long iY = pCurrentChunk->iY;
+
+		pCurrentChunk = pChunk;
+
+		if (offsetX != 0)
+		{
+			if (offsetX < 0)
+			{
+				iX -= pGen->ViewDistance;
+			}
+			else
+			{
+				iX += pGen->ViewDistance;
+			}
+		}
+
+		if (offsetY != 0)
+		{
+			if (offsetY < 0)
+			{
+				iY -= pGen->ViewDistance;
+			}
+			else
+			{
+				iY += pGen->ViewDistance;
+			}
+		}
+
+		generateAndAddNewChunk(iX, iY, offsetX, offsetY);
+	}
+	else
+	{
+		pCurrentChunk = pChunk;
+	}
+}
+
+FWGenChunkMap::~FWGenChunkMap()
+{
+	for (size_t i = 0; i < vChunks.size(); i++)
+	{
+		if (!vChunks[i]->IsValidLowLevel())
+		{
+			continue;;
+		}
+
+		if (vChunks[i]->IsPendingKill())
+		{
+			continue;
+		}
+
+		vChunks[i]->Destroy();
+		vChunks[i] = nullptr;
 	}
 }

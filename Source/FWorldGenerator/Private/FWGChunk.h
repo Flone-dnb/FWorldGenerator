@@ -17,6 +17,7 @@
 
 #include "FWGChunk.generated.h"
 
+class FWGenChunkMap;
 
 UCLASS()
 class AFWGChunk : public AActor
@@ -29,6 +30,7 @@ public:
 
 	void setInit(long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter);
 	void setChunkSize(int32 iXCount, int32 iYCount);
+	void setChunkMap(FWGenChunkMap* pChunkMap);
 	void setOverlapToActors(std::vector<FString> vClasses);
 	void clearChunk();
 	void setMeshSection(FProcMeshSection* pMeshSection);
@@ -76,6 +78,8 @@ protected:
 
 
 	std::vector<FString>      vClassesToOverlap;
+
+	FWGenChunkMap*            pChunkMap;
 
 	bool                      bAroundCenter;
 };

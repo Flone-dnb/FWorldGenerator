@@ -6,6 +6,8 @@
 
 #include "FWGChunk.h"
 
+#include "FWGen.h"
+
 #if WITH_EDITOR
 #include "DrawDebugHelpers.h"
 #include <EngineGlobals.h>
@@ -55,6 +57,11 @@ void AFWGChunk::setChunkSize(int32 iXCount, int32 iYCount)
 	}
 }
 
+void AFWGChunk::setChunkMap(FWGenChunkMap* pChunkMap)
+{
+	this->pChunkMap = pChunkMap;
+}
+
 void AFWGChunk::setOverlapToActors(std::vector<FString> vClasses)
 {
 	vClassesToOverlap = vClasses;
@@ -101,6 +108,8 @@ void AFWGChunk::OnBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* Othe
 		{
 			if (OtherActor->GetClass()->GetName() == vClassesToOverlap[i])
 			{
+				pChunkMap->setCurrentChunk(this);
+
 				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Overlap Begin"));
 
 				break;

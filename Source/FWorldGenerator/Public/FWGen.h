@@ -16,9 +16,6 @@
 #include <random>
 #include <thread>
 
-// Custom
-#include "../Private/FWGChunk.h"
-
 #include "FWGen.generated.h"
 
 
@@ -30,7 +27,7 @@ class UStaticMeshComponent;
 // --------------------------------------------------------------------------------------------------------
 
 class FWGenChunkMap;
-class AFWGenChunk;
+class AFWGChunk;
 class FWGCallback;
 
 UCLASS()
@@ -362,8 +359,8 @@ private:
 	AFWGChunk*  generateChunk      (long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter);
 	void  generateSeed             ();
 	float pickVertexMaterial       (double height, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
-	void  blendWorldMaterialsMore  ();
-	void  applySlopeDependentBlend ();
+	void  blendWorldMaterialsMore  (AFWGChunk* pOnlyForThisChunk = nullptr);
+	void  applySlopeDependentBlend (AFWGChunk* pOnlyForThisChunk = nullptr);
 	void  spawnObjects             ();
 
 	bool areEqual                  (float a, float b, float eps);
@@ -381,6 +378,9 @@ private:
 	UProceduralMeshComponent* pProcMeshComponent;
 
 
+	int32                     iCurrentSectionIndex;
+
+
 	FWGenChunkMap*            pChunkMap;
 
 
@@ -388,6 +388,9 @@ private:
 
 
 	bool                      bWorldCreated;
+
+
+	friend class FWGenChunkMap;
 };
 
 // --------------------------------------------------------------------------------------------------------
@@ -416,60 +419,24 @@ class FWGenChunkMap
 {
 public:
 
-	void addChunk(AFWGChunk* pChunk)
-	{
-		vChunks.push_back(pChunk);
-	}
+	FWGenChunkMap(AFWGen* pGen);
 
-	void clearChunks()
-	{
-		for (size_t i = 0; i < vChunks.size(); i++)
-		{
-			vChunks[i]->clearChunk();
-		}
-	}
+	void addChunk(AFWGChunk* pChunk);
 
-	void clearWorld(UProceduralMeshComponent* pProcMeshComponent)
-	{
-		for (size_t i = 0; i < vChunks.size(); i++)
-		{
-			if (!vChunks[i]->IsValidLowLevel())
-			{
-				continue;;
-			}
+	void clearChunks();
 
-			if (vChunks[i]->IsPendingKill())
-			{
-				continue;
-			}
+	void clearWorld(UProceduralMeshComponent* pProcMeshComponent);
 
-			vChunks[i]->Destroy();
-			vChunks[i] = nullptr;
-		}
+	void setCurrentChunk(AFWGChunk* pChunk);
 
-		vChunks.clear();
-
-		pProcMeshComponent->ClearAllMeshSections();
-	}
-
-	~FWGenChunkMap()
-	{
-		for (size_t i = 0; i < vChunks.size(); i++)
-		{
-			if (!vChunks[i]->IsValidLowLevel())
-			{
-				continue;;
-			}
-
-			if (vChunks[i]->IsPendingKill())
-			{
-				continue;
-			}
-
-			vChunks[i]->Destroy();
-			vChunks[i] = nullptr;
-		}
-	}
+	~FWGenChunkMap();
 
 	std::vector<AFWGChunk*> vChunks;
+
+private:
+
+	void generateAndAddNewChunk(long long iX, long long iY, long long offsetX, long long offsetY);
+
+	AFWGChunk* pCurrentChunk;
+	AFWGen* pGen;
 };
