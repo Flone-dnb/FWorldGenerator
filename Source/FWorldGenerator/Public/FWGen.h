@@ -361,7 +361,7 @@ private:
 	float pickVertexMaterial       (double height, std::uniform_real_distribution<float>* pUrd, std::mt19937_64* pRnd, float* pfLayerTypeWithoutRnd = nullptr);
 	void  blendWorldMaterialsMore  (AFWGChunk* pOnlyForThisChunk = nullptr);
 	void  applySlopeDependentBlend (AFWGChunk* pOnlyForThisChunk = nullptr);
-	void  spawnObjects             ();
+	void  spawnObjects             (AFWGChunk* pOnlyForThisChunk = nullptr);
 
 	bool areEqual                  (float a, float b, float eps);
 	void compareHeightDifference   (AFWGChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff);

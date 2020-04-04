@@ -554,7 +554,7 @@ void AFWGen::applySlopeDependentBlend(AFWGChunk* pOnlyForThisChunk)
 	}
 }
 
-void AFWGen::spawnObjects()
+void AFWGen::spawnObjects(AFWGChunk* pOnlyForThisChunk)
 {
 	std::mt19937_64 gen(std::random_device{}());
 
@@ -567,19 +567,33 @@ void AFWGen::spawnObjects()
 			return a.fProbabilityToSpawn < b.fProbabilityToSpawn;
 		});
 
-	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+	std::vector<AFWGChunk*> vChunksToProcess;
+
+	if (pOnlyForThisChunk)
+	{
+		vChunksToProcess.push_back(pOnlyForThisChunk);
+	}
+	else
+	{
+		for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+		{
+			vChunksToProcess.push_back(pChunkMap->vChunks[i]);
+		}
+	}
+
+	for (size_t i = 0; i < vChunksToProcess.size(); i++)
 	{
 		float fChunkX = GetActorLocation().X;
 		float fChunkY = GetActorLocation().Y;
 
-		if (pChunkMap->vChunks[i]->iX != 0)
+		if (vChunksToProcess[i]->iX != 0)
 		{
-			fChunkX += (pChunkMap->vChunks[i]->iX * ChunkPieceColumnCount * ChunkPieceSizeX);
+			fChunkX += (vChunksToProcess[i]->iX * ChunkPieceColumnCount * ChunkPieceSizeX);
 		}
 
-		if (pChunkMap->vChunks[i]->iY != 0)
+		if (vChunksToProcess[i]->iY != 0)
 		{
-			fChunkY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
+			fChunkY += (vChunksToProcess[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
 		}
 
 		float fStartX = fChunkX - (ChunkPieceColumnCount * ChunkPieceSizeX) / 2;
@@ -622,9 +636,9 @@ void AFWGen::spawnObjects()
 
 
 
-		for (size_t y = 0; y < pChunkMap->vChunks[i]->vChunkCells.size(); y++)
+		for (size_t y = 0; y < vChunksToProcess[i]->vChunkCells.size(); y++)
 		{
-			for (size_t x = 0; x < pChunkMap->vChunks[i]->vChunkCells[y].size(); x++)
+			for (size_t x = 0; x < vChunksToProcess[i]->vChunkCells[y].size(); x++)
 			{
 				FVector location;
 				location.X = fStartX + x * fXCellSize + fXCellSize / 2;
@@ -706,7 +720,7 @@ void AFWGen::spawnObjects()
 
 				if (bSteepSlope)
 				{
-					pChunkMap->vChunks[i]->vChunkCells[y][x] = true;
+					vChunksToProcess[i]->vChunkCells[y][x] = true;
 
 					continue;
 				}
@@ -757,7 +771,7 @@ void AFWGen::spawnObjects()
 					{
 						if (pCurrentLayer->operator[](k).bIsBlocking)
 						{
-							pChunkMap->vChunks[i]->vChunkCells[y][x] = true;
+							vChunksToProcess[i]->vChunkCells[y][x] = true;
 						}
 
 
@@ -1892,12 +1906,12 @@ void FWGenChunkMap::generateAndAddNewChunk(long long iX, long long iY, long long
 
 		if (pGen->ApplyGroundMaterialBlend)
 		{
-			pGen->blendWorldMaterialsMore(pCurrentChunk);
+			pGen->blendWorldMaterialsMore(pNewChunk);
 		}
 
 		if (pGen->ApplySlopeDependentBlend)
 		{
-			pGen->applySlopeDependentBlend(pCurrentChunk);
+			pGen->applySlopeDependentBlend(pNewChunk);
 		}
 
 		// Update mesh.
@@ -1929,8 +1943,9 @@ void FWGenChunkMap::generateAndAddNewChunk(long long iX, long long iY, long long
 		));
 
 
-		//pGen->spawnObjects();
+		pGen->spawnObjects(pNewChunk);
 
+		// TODO: add trigger.
 		// TODO: unload old chunk.
 
 		pGen->iCurrentSectionIndex++;
@@ -1982,8 +1997,8 @@ void FWGenChunkMap::setCurrentChunk(AFWGChunk* pChunk)
 		long long offsetX = pChunk->iX - pCurrentChunk->iX;
 		long long offsetY = pChunk->iY - pCurrentChunk->iY;
 
-		long long iX = pCurrentChunk->iX;
-		long long iY = pCurrentChunk->iY;
+		long long iX = pChunk->iX;
+		long long iY = pChunk->iY;
 
 		pCurrentChunk = pChunk;
 
