@@ -112,7 +112,7 @@ To use the generator just place an object of the <b>FWGen</b> class (search in t
 <br>
 To generate the world in the runtime you need to call the <b>GenerateWorld()</b> function from this object.<br>
 <br>
-You need to be sure that you are creating your character in the center (central chunk) of the world. You can check chunk bounds by enabling the Draw Chunk Bounds option.<br>
+You need to be sure that you are creating your character in the center (central chunk) of the world OR you need to set the World Size to "-1". You can check chunk bounds by enabling the Draw Chunk Bounds option.<br>
 <br>
 BE AWARE that generating a world (probably with your custom actors (see below)) can take a while! Don't think that it stuck somewhere or froze, just take your time. For example, generating a world with the default parameters without spawning objects takes about 30-40 sec. (PIE) on my machine.
 
