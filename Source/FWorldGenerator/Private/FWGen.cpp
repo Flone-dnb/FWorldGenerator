@@ -7,6 +7,7 @@
 
 // UE
 #include "Components/StaticMeshComponent.h"
+#include <Runtime/Engine/Classes/Engine/Engine.h>
 
 // STL
 #include <ctime>
@@ -20,7 +21,6 @@
 #if WITH_EDITOR
 #include "DrawDebugHelpers.h"
 #include <EngineGlobals.h>
-#include <Runtime/Engine/Classes/Engine/Engine.h>
 #endif // WITH_EDITOR
 
 // --------------------------------------------------------------------------------------------------------
@@ -274,9 +274,11 @@ void AFWGen::GenerateWorld()
 	spawnObjects();
 
 
-	// Create trigger
+	
 	if (WorldSize != -1)
 	{
+		// Create triggers.
+
 #if WITH_EDITOR
 		FlushPersistentDebugLines(GetWorld());
 #endif // WITH_EDITOR
@@ -301,13 +303,7 @@ void AFWGen::GenerateWorld()
 				fTriggerY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
 			}
 
-			pChunkMap->vChunks[i]->SetActorLocation(FVector(fTriggerX, fTriggerY, fTriggerZ));
-			pChunkMap->vChunks[i]->pTriggerBox->SetBoxExtent(FVector(ChunkPieceColumnCount * ChunkPieceSizeX / 2,
-				ChunkPieceRowCount * ChunkPieceSizeY / 2,
-				LoadUnloadChunkMaxZ / 2));
-
-			pChunkMap->vChunks[i]->pTriggerBox->SetGenerateOverlapEvents(true);
-			pChunkMap->vChunks[i]->setOverlapToActors(vOverlapToClasses);
+			createTriggerBoxForChunk(pChunkMap->vChunks[i]);
 
 #if WITH_EDITOR
 			if (DrawChunkBounds)
@@ -789,6 +785,35 @@ void AFWGen::spawnObjects(AFWGChunk* pOnlyForThisChunk)
 			}
 		}
 	}
+}
+
+void AFWGen::createTriggerBoxForChunk(AFWGChunk* pChunk)
+{
+	float fTriggerX = GetActorLocation().X;
+	float fTriggerY = GetActorLocation().Y;
+	float fTriggerZ = GetActorLocation().Z + LoadUnloadChunkMaxZ / 2;
+
+	if (pChunk->iX != 0)
+	{
+		// Left or right chunk
+
+		fTriggerX += (pChunk->iX * ChunkPieceColumnCount * ChunkPieceSizeX);
+	}
+
+	if (pChunk->iY != 0)
+	{
+		// Top or bottom chunk
+
+		fTriggerY += (pChunk->iY * ChunkPieceRowCount * ChunkPieceSizeY);
+	}
+
+	pChunk->SetActorLocation(FVector(fTriggerX, fTriggerY, fTriggerZ));
+	pChunk->pTriggerBox->SetBoxExtent(FVector(ChunkPieceColumnCount * ChunkPieceSizeX / 2,
+		ChunkPieceRowCount * ChunkPieceSizeY / 2,
+		LoadUnloadChunkMaxZ / 2));
+
+	pChunk->pTriggerBox->SetGenerateOverlapEvents(true);
+	pChunk->setOverlapToActors(vOverlapToClasses);
 }
 
 bool AFWGen::SetMaxRotation(float fMaxRotation)
@@ -1500,7 +1525,8 @@ float AFWGen::pickVertexMaterial(double height, std::uniform_real_distribution<f
 	return fVertexColor;
 }
 
-AFWGChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter)
+AFWGChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter,
+	long long iUnloadX, long long iUnloadY, bool bUnload)
 {
 	// Generation setup
 
@@ -1556,17 +1582,37 @@ AFWGChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex
 
 
 
-	// Create chunk
+	// Create chunk.
 
-	// You don't want to use NewObject for Actors (only UObjects).
-	//AFWGChunk* pNewChunk = NewObject<AFWGChunk>(GetTransientPackage(), MakeUniqueObjectName(this, AFWGChunk::StaticClass(), "Chunk_"));
-	FActorSpawnParameters params;
-	params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AFWGChunk* pNewChunk = nullptr;
 
-	AFWGChunk* pNewChunk = GetWorld()->SpawnActor<AFWGChunk>(AFWGChunk::StaticClass(), FTransform(FRotator(0, 0, 0), FVector(0, 0, 0), FVector(1, 1, 1)), params);
-	pNewChunk->setInit(iX, iY, iSectionIndex, bAroundCenter);
-	pNewChunk->setChunkSize(DivideChunkXCount, DivideChunkYCount);
-	pNewChunk->setChunkMap(pChunkMap);
+	if (bUnload == false)
+	{
+		// You don't want to use NewObject for Actors (only UObjects).
+		//AFWGChunk* pNewChunk = NewObject<AFWGChunk>(GetTransientPackage(), MakeUniqueObjectName(this, AFWGChunk::StaticClass(), "Chunk_"));
+		FActorSpawnParameters params;
+		params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		pNewChunk = GetWorld()->SpawnActor<AFWGChunk>(AFWGChunk::StaticClass(), FTransform(FRotator(0, 0, 0), FVector(0, 0, 0), FVector(1, 1, 1)), params);
+		pNewChunk->setInit(iX, iY, iSectionIndex, bAroundCenter);
+		pNewChunk->setChunkSize(DivideChunkXCount, DivideChunkYCount);
+		pNewChunk->setChunkMap(pChunkMap);
+	}
+	else
+	{
+		for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+		{
+			if (pChunkMap->vChunks[i]->iX == iUnloadX
+				&& pChunkMap->vChunks[i]->iY == iUnloadY)
+			{
+				pNewChunk = pChunkMap->vChunks[i];
+
+				pNewChunk->setUpdate(iX, iY, bAroundCenter);
+
+				iCurrentSectionIndex = pNewChunk->iSectionIndex;
+			}
+		}
+	}
 
 
 
@@ -1712,16 +1758,24 @@ AFWGChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex
 
 	pNewChunk->iMaxZVertexIndex = iMaxGeneratedZIndex;
 
-	pProcMeshComponent->CreateMeshSection_LinearColor(iSectionIndex, pNewChunk->vVertices, pNewChunk->vTriangles, pNewChunk->vNormals,
-		pNewChunk->vUV0, pNewChunk->vVertexColors, pNewChunk->vTangents, true);
-
-	// Set material
-	if (GroundMaterial)
+	if (bUnload == false)
 	{
-		pProcMeshComponent->SetMaterial(iSectionIndex, GroundMaterial);
-	}
+		pProcMeshComponent->CreateMeshSection_LinearColor(iSectionIndex, pNewChunk->vVertices, pNewChunk->vTriangles, pNewChunk->vNormals,
+			pNewChunk->vUV0, pNewChunk->vVertexColors, pNewChunk->vTangents, true);
 
-	pNewChunk->setMeshSection(pProcMeshComponent->GetProcMeshSection(iSectionIndex));
+		// Set material
+		if (GroundMaterial)
+		{
+			pProcMeshComponent->SetMaterial(iSectionIndex, GroundMaterial);
+		}
+
+		pNewChunk->setMeshSection(pProcMeshComponent->GetProcMeshSection(iSectionIndex));
+	}
+	else
+	{
+		pProcMeshComponent->UpdateMeshSection_LinearColor(iSectionIndex, pNewChunk->vVertices, pNewChunk->vNormals, 
+			pNewChunk->vUV0, pNewChunk->vVertexColors, pNewChunk->vTangents);
+	}
 
 	return pNewChunk;
 }
@@ -1893,16 +1947,31 @@ FWGenChunkMap::FWGenChunkMap(AFWGen* pGen)
 
 void FWGenChunkMap::generateAndAddNewChunk(long long iX, long long iY, long long offsetX, long long offsetY)
 {
-	bool bAroundCenter = false;
-
-	if ((iX <= 1) && (iX >= -1) && (iY <= 1) && (iY >= -1))
-	{
-		bAroundCenter = true;
-	}
-
 	if (pGen->WorldSize != -1)
 	{
-		AFWGChunk* pNewChunk = pGen->generateChunk(iX, iY, pGen->iCurrentSectionIndex, bAroundCenter);
+		bool bAroundCenter = false;
+
+		if ((iX <= 1) && (iX >= -1) && (iY <= 1) && (iY >= -1))
+		{
+			bAroundCenter = true;
+		}
+
+
+		long long iUnloadX = iX - offsetX;
+		long long iUnloadY = iY - offsetY;
+
+		if (offsetX != 0)
+		{
+			iUnloadX += ((-offsetX) * 2);
+		}
+
+		if (offsetY != 0)
+		{
+			iUnloadY += ((-offsetY) * 2);
+		}
+
+
+		AFWGChunk* pNewChunk = pGen->generateChunk(iX, iY, pGen->iCurrentSectionIndex, bAroundCenter, iUnloadX, iUnloadY, true);
 
 		if (pGen->ApplyGroundMaterialBlend)
 		{
@@ -1915,12 +1984,12 @@ void FWGenChunkMap::generateAndAddNewChunk(long long iX, long long iY, long long
 		}
 
 		// Update mesh.
-		pGen->pProcMeshComponent->UpdateMeshSection_LinearColor(pGen->iCurrentSectionIndex, pNewChunk->vVertices, pNewChunk->vNormals,
+		pGen->pProcMeshComponent->UpdateMeshSection_LinearColor(pNewChunk->iSectionIndex, pNewChunk->vVertices, pNewChunk->vNormals,
 			pNewChunk->vUV0, pNewChunk->vVertexColors, pNewChunk->vTangents);
 
 
 
-		// Water Plane
+		// Move Water Plane.
 
 		float fX = pGen->GetActorLocation().X;
 		float fY = pGen->GetActorLocation().Y;
@@ -1943,28 +2012,19 @@ void FWGenChunkMap::generateAndAddNewChunk(long long iX, long long iY, long long
 		));
 
 
+		// Do last steps.
+
 		pGen->spawnObjects(pNewChunk);
 
-		// TODO: add trigger.
-		// TODO: unload old chunk.
+		pGen->createTriggerBoxForChunk(pNewChunk);
 
-		pGen->iCurrentSectionIndex++;
-
-		addChunk(pNewChunk);
+		// TODO: unload old chunks.
 	}
 }
 
 void FWGenChunkMap::addChunk(AFWGChunk* pChunk)
 {
 	vChunks.push_back(pChunk);
-}
-
-void FWGenChunkMap::clearChunks()
-{
-	for (size_t i = 0; i < vChunks.size(); i++)
-	{
-		vChunks[i]->clearChunk();
-	}
 }
 
 void FWGenChunkMap::clearWorld(UProceduralMeshComponent* pProcMeshComponent)
@@ -2027,6 +2087,23 @@ void FWGenChunkMap::setCurrentChunk(AFWGChunk* pChunk)
 		}
 
 		generateAndAddNewChunk(iX, iY, offsetX, offsetY);
+
+
+		// Generate other chunks.
+
+		/*for (int32 i = 1; i <= pGen->ViewDistance; i++)
+		{
+			if (offsetX == 0)
+			{
+				generateAndAddNewChunk(iX - i, iY, offsetX - i, offsetY);
+				generateAndAddNewChunk(iX + i, iY, offsetX + i, offsetY);
+			}
+			else if (offsetY == 0)
+			{
+				generateAndAddNewChunk(iX, iY - i, offsetX, offsetY - i);
+				generateAndAddNewChunk(iX, iY + i, offsetX, offsetY + i);
+			}
+		}*/
 	}
 	else
 	{

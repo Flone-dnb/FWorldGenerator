@@ -19,7 +19,6 @@ AFWGChunk::AFWGChunk()
 	pTriggerBox = CreateDefaultSubobject<UBoxComponent>(MakeUniqueObjectName(this, UBoxComponent::StaticClass(), "Trigger"));
 	pTriggerBox->SetupAttachment(RootComponent);
 	pTriggerBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//pTriggerBox->SetGenerateOverlapEvents(true);
 	pTriggerBox->BodyInstance.SetCollisionProfileName(TEXT("OverlapAll"));
 	
 	// need to have this on BeginPlay because here they can cause some problems when working with blueprints
@@ -43,6 +42,16 @@ void AFWGChunk::setInit(long long iX, long long iY, int32 iSectionIndex, bool bA
 	this->iY = iY;
 
 	this->iSectionIndex = iSectionIndex;
+
+	this->bAroundCenter = bAroundCenter;
+}
+
+void AFWGChunk::setUpdate(long long iX, long long iY, bool bAroundCenter)
+{
+	clearChunk();
+
+	this->iX = iX;
+	this->iY = iY;
 
 	this->bAroundCenter = bAroundCenter;
 }
@@ -76,7 +85,8 @@ void AFWGChunk::clearChunk()
 	vVertexColors .Empty();
 	vTangents     .Empty();
 
-	pMeshSection->Reset();
+	vLayerIndex.clear();
+	vChunkCells.clear();
 }
 
 void AFWGChunk::setMeshSection(FProcMeshSection* pMeshSection)
