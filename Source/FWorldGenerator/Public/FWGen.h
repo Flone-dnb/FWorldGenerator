@@ -15,6 +15,7 @@
 #include <vector>
 #include <random>
 #include <thread>
+#include <mutex>
 
 #include "FWGen.generated.h"
 
@@ -435,8 +436,10 @@ public:
 
 private:
 
-	void generateAndAddNewChunk(long long iX, long long iY, long long offsetX, long long offsetY);
+	void loadNewChunk(long long iLoadX, long long iLoadY, long long iUnloadX, long long iUnloadY);
 
 	AFWGChunk* pCurrentChunk;
 	AFWGen* pGen;
+
+	std::mutex mtxLoadChunks;
 };

@@ -1609,7 +1609,9 @@ AFWGChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex
 
 				pNewChunk->setUpdate(iX, iY, bAroundCenter);
 
-				iCurrentSectionIndex = pNewChunk->iSectionIndex;
+				iSectionIndex = pNewChunk->iSectionIndex;
+
+				break;
 			}
 		}
 	}
@@ -1945,33 +1947,19 @@ FWGenChunkMap::FWGenChunkMap(AFWGen* pGen)
 	this->pGen    = pGen;
 }
 
-void FWGenChunkMap::generateAndAddNewChunk(long long iX, long long iY, long long offsetX, long long offsetY)
+void FWGenChunkMap::loadNewChunk(long long iLoadX, long long iLoadY, long long iUnloadX, long long iUnloadY)
 {
 	if (pGen->WorldSize != -1)
 	{
 		bool bAroundCenter = false;
 
-		if ((iX <= 1) && (iX >= -1) && (iY <= 1) && (iY >= -1))
+		if ((iLoadX <= 1) && (iLoadX >= -1) && (iLoadY <= 1) && (iLoadY >= -1))
 		{
 			bAroundCenter = true;
 		}
 
 
-		long long iUnloadX = iX - offsetX;
-		long long iUnloadY = iY - offsetY;
-
-		if (offsetX != 0)
-		{
-			iUnloadX += ((-offsetX) * 2);
-		}
-
-		if (offsetY != 0)
-		{
-			iUnloadY += ((-offsetY) * 2);
-		}
-
-
-		AFWGChunk* pNewChunk = pGen->generateChunk(iX, iY, pGen->iCurrentSectionIndex, bAroundCenter, iUnloadX, iUnloadY, true);
+		AFWGChunk* pNewChunk = pGen->generateChunk(iLoadX, iLoadY, pGen->iCurrentSectionIndex, bAroundCenter, iUnloadX, iUnloadY, true);
 
 		if (pGen->ApplyGroundMaterialBlend)
 		{
@@ -1994,14 +1982,14 @@ void FWGenChunkMap::generateAndAddNewChunk(long long iX, long long iY, long long
 		float fX = pGen->GetActorLocation().X;
 		float fY = pGen->GetActorLocation().Y;
 
-		if (offsetX != 0)
+		if (iLoadX != 0)
 		{
-			fX += (offsetX * pGen->ChunkPieceColumnCount * pGen->ChunkPieceSizeX);
+			fX += (iLoadX * pGen->ChunkPieceColumnCount * pGen->ChunkPieceSizeX);
 		}
 		
-		if (offsetY != 0)
+		if (iLoadY != 0)
 		{
-			fY += (offsetY * pGen->ChunkPieceRowCount * pGen->ChunkPieceSizeY);
+			fY += (iLoadY * pGen->ChunkPieceRowCount * pGen->ChunkPieceSizeY);
 		}
 
 
@@ -2057,53 +2045,41 @@ void FWGenChunkMap::setCurrentChunk(AFWGChunk* pChunk)
 		long long offsetX = pChunk->iX - pCurrentChunk->iX;
 		long long offsetY = pChunk->iY - pCurrentChunk->iY;
 
-		long long iX = pChunk->iX;
-		long long iY = pChunk->iY;
+		if (offsetX != 0 && offsetY != 0)
+		{
+			return;
+		}
+
+		mtxLoadChunks.lock();
+
+		long long iX = pChunk->iX + (offsetX * pGen->ViewDistance);
+		long long iY = pChunk->iY + (offsetY * pGen->ViewDistance);
+
+		long long iUnloadX = pCurrentChunk->iX + (-offsetX * pGen->ViewDistance);
+		long long iUnloadY = pCurrentChunk->iY + (-offsetY * pGen->ViewDistance);
 
 		pCurrentChunk = pChunk;
 
-		if (offsetX != 0)
-		{
-			if (offsetX < 0)
-			{
-				iX -= pGen->ViewDistance;
-			}
-			else
-			{
-				iX += pGen->ViewDistance;
-			}
-		}
-
-		if (offsetY != 0)
-		{
-			if (offsetY < 0)
-			{
-				iY -= pGen->ViewDistance;
-			}
-			else
-			{
-				iY += pGen->ViewDistance;
-			}
-		}
-
-		generateAndAddNewChunk(iX, iY, offsetX, offsetY);
+		loadNewChunk(iX, iY, iUnloadX, iUnloadY);
 
 
 		// Generate other chunks.
 
-		/*for (int32 i = 1; i <= pGen->ViewDistance; i++)
+		for (int32 i = 1; i <= pGen->ViewDistance; i++)
 		{
 			if (offsetX == 0)
 			{
-				generateAndAddNewChunk(iX - i, iY, offsetX - i, offsetY);
-				generateAndAddNewChunk(iX + i, iY, offsetX + i, offsetY);
+				loadNewChunk(iX - i, iY, iUnloadX + 1, iUnloadY);
+				loadNewChunk(iX + i, iY, iUnloadX - 1, iUnloadY);
 			}
 			else if (offsetY == 0)
 			{
-				generateAndAddNewChunk(iX, iY - i, offsetX, offsetY - i);
-				generateAndAddNewChunk(iX, iY + i, offsetX, offsetY + i);
+				loadNewChunk(iX, iY - i, iUnloadX, iUnloadY + 1);
+				loadNewChunk(iX, iY + i, iUnloadX, iUnloadY - 1);
 			}
-		}*/
+		}
+
+		mtxLoadChunks.unlock();
 	}
 	else
 	{

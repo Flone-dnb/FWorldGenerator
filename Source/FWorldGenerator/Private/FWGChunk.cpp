@@ -8,11 +8,6 @@
 
 #include "FWGen.h"
 
-#if WITH_EDITOR
-#include "DrawDebugHelpers.h"
-#include <EngineGlobals.h>
-#include <Runtime/Engine/Classes/Engine/Engine.h>
-#endif // WITH_EDITOR
 
 AFWGChunk::AFWGChunk()
 {
@@ -31,7 +26,7 @@ void AFWGChunk::BeginPlay()
 	Super::BeginPlay();
 
 	pTriggerBox->OnComponentBeginOverlap.AddDynamic(this, &AFWGChunk::OnBeginOverlap);
-	pTriggerBox->OnComponentEndOverlap.AddDynamic(this, &AFWGChunk::OnEndOverlap);
+	//pTriggerBox->OnComponentEndOverlap.AddDynamic(this, &AFWGChunk::OnEndOverlap);
 }
 
 void AFWGChunk::setInit(long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter)
@@ -120,26 +115,22 @@ void AFWGChunk::OnBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* Othe
 			{
 				pChunkMap->setCurrentChunk(this);
 
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Overlap Begin"));
-
 				break;
 			}
 		}
 	}
 }
 
-void AFWGChunk::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	if ( (OtherActor != nullptr ) && (OtherActor != this) && ( OtherComp != nullptr ) ) 
-	{
-		for (size_t i = 0; i < vClassesToOverlap.size(); i++)
-		{
-			if (OtherActor->GetClass()->GetName() == vClassesToOverlap[i])
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Overlap End"));
-
-				break;
-			}
-		}
-	}
-}
+//void AFWGChunk::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+//{
+//	if ( (OtherActor != nullptr ) && (OtherActor != this) && ( OtherComp != nullptr ) ) 
+//	{
+//		for (size_t i = 0; i < vClassesToOverlap.size(); i++)
+//		{
+//			if (OtherActor->GetClass()->GetName() == vClassesToOverlap[i])
+//			{
+//				break;
+//			}
+//		}
+//	}
+//}
