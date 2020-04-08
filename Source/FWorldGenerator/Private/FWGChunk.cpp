@@ -8,7 +8,6 @@
 
 #include "FWGen.h"
 
-
 AFWGChunk::AFWGChunk()
 {
 	pTriggerBox = CreateDefaultSubobject<UBoxComponent>(MakeUniqueObjectName(this, UBoxComponent::StaticClass(), "Trigger"));

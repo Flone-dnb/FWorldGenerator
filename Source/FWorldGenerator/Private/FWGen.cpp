@@ -2005,8 +2005,6 @@ void FWGenChunkMap::loadNewChunk(long long iLoadX, long long iLoadY, long long i
 		pGen->spawnObjects(pNewChunk);
 
 		pGen->createTriggerBoxForChunk(pNewChunk);
-
-		// TODO: unload old chunks.
 	}
 }
 
