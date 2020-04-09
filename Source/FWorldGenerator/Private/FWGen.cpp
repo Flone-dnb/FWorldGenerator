@@ -2067,13 +2067,13 @@ void FWGenChunkMap::setCurrentChunk(AFWGChunk* pChunk)
 		{
 			if (offsetX == 0)
 			{
-				loadNewChunk(iX - i, iY, iUnloadX + 1, iUnloadY);
-				loadNewChunk(iX + i, iY, iUnloadX - 1, iUnloadY);
+				loadNewChunk(iX - i, iY, iUnloadX + i, iUnloadY);
+				loadNewChunk(iX + i, iY, iUnloadX - i, iUnloadY);
 			}
 			else if (offsetY == 0)
 			{
-				loadNewChunk(iX, iY - i, iUnloadX, iUnloadY + 1);
-				loadNewChunk(iX, iY + i, iUnloadX, iUnloadY - 1);
+				loadNewChunk(iX, iY - i, iUnloadX, iUnloadY + i);
+				loadNewChunk(iX, iY + i, iUnloadX, iUnloadY - i);
 			}
 		}
 
