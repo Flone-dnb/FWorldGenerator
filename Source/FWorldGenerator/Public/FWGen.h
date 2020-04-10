@@ -381,6 +381,16 @@ private:
 	UProceduralMeshComponent* pProcMeshComponent;
 
 
+	UPROPERTY()
+	UBoxComponent*            pBlockingVolumeX1;
+	UPROPERTY()
+	UBoxComponent*            pBlockingVolumeX2;
+	UPROPERTY()
+	UBoxComponent*            pBlockingVolumeY1;
+	UPROPERTY()
+	UBoxComponent*            pBlockingVolumeY2;
+
+
 	int32                     iCurrentSectionIndex;
 
 

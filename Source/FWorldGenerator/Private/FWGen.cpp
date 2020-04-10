@@ -71,6 +71,22 @@ AFWGen::AFWGen()
 
 
 
+	// Blocking volumes.
+	pBlockingVolumeX1 = CreateDefaultSubobject<UBoxComponent>("Blocking Volume X1");
+	pBlockingVolumeX1->SetupAttachment(RootComponent);
+	pBlockingVolumeX1->BodyInstance.SetCollisionProfileName(TEXT("BlockAll"));
+
+	pBlockingVolumeX2 = CreateDefaultSubobject<UBoxComponent>("Blocking Volume X2");
+	pBlockingVolumeX2->SetupAttachment(RootComponent);
+	pBlockingVolumeX2->BodyInstance.SetCollisionProfileName(TEXT("BlockAll"));
+
+	pBlockingVolumeY1 = CreateDefaultSubobject<UBoxComponent>("Blocking Volume Y1");
+	pBlockingVolumeY1->SetupAttachment(RootComponent);
+	pBlockingVolumeY1->BodyInstance.SetCollisionProfileName(TEXT("BlockAll"));
+
+	pBlockingVolumeY2 = CreateDefaultSubobject<UBoxComponent>("Blocking Volume Y2");
+	pBlockingVolumeY2->SetupAttachment(RootComponent);
+	pBlockingVolumeY2->BodyInstance.SetCollisionProfileName(TEXT("BlockAll"));
 
 
 
@@ -101,17 +117,56 @@ AFWGen::~AFWGen()
 		delete pChunkMap;
 	}
 
-	if (!pProcMeshComponent->IsValidLowLevel())
+
+
+
+	if (pProcMeshComponent->IsValidLowLevel())
 	{
-		return;
+		if (pProcMeshComponent->IsPendingKill() == false)
+		{
+			pProcMeshComponent->DestroyComponent();
+		}
 	}
 
-	if (pProcMeshComponent->IsPendingKill())
+
+
+	if (pBlockingVolumeX1->IsValidLowLevel())
 	{
-		return;
+		if (pBlockingVolumeX1->IsPendingKill() == false)
+		{
+			pBlockingVolumeX1->DestroyComponent();
+		}
 	}
 
-	pProcMeshComponent->DestroyComponent();
+
+
+	if (pBlockingVolumeX2->IsValidLowLevel())
+	{
+		if (pBlockingVolumeX2->IsPendingKill() == false)
+		{
+			pBlockingVolumeX2->DestroyComponent();
+		}
+	}
+
+
+
+	if (pBlockingVolumeY1->IsValidLowLevel())
+	{
+		if (pBlockingVolumeY1->IsPendingKill() == false)
+		{
+			pBlockingVolumeY1->DestroyComponent();
+		}
+	}
+
+
+
+	if (pBlockingVolumeY2->IsValidLowLevel())
+	{
+		if (pBlockingVolumeY2->IsPendingKill() == false)
+		{
+			pBlockingVolumeY2->DestroyComponent();
+		}
+	}
 }
 
 bool AFWGen::BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName,  float Layer, float ProbabilityToSpawn, bool IsBlocking)
@@ -316,6 +371,55 @@ void AFWGen::GenerateWorld()
 			}
 #endif // WITH_EDITOR
 		}
+
+		float fChunkXSize = ChunkPieceColumnCount * ChunkPieceSizeX;
+		float fChunkYSize = ChunkPieceRowCount * ChunkPieceSizeY;
+
+		pBlockingVolumeX1->SetWorldLocation(FVector(GetActorLocation().X - (ViewDistance + 1) * fChunkXSize,
+			GetActorLocation().Y,
+			GetActorLocation().Z + LoadUnloadChunkMaxZ / 2));
+
+		pBlockingVolumeX1->SetBoxExtent(FVector(ChunkPieceColumnCount * ChunkPieceSizeX / 2,
+			(ChunkPieceRowCount * ChunkPieceSizeY / 2) * (ViewDistance * 3),
+			LoadUnloadChunkMaxZ / 2));
+
+		pBlockingVolumeX1->SetGenerateOverlapEvents(true);
+
+
+
+		pBlockingVolumeX2->SetWorldLocation(FVector(GetActorLocation().X + (ViewDistance + 1) * fChunkXSize,
+			GetActorLocation().Y,
+			GetActorLocation().Z + LoadUnloadChunkMaxZ / 2));
+
+		pBlockingVolumeX2->SetBoxExtent(FVector(ChunkPieceColumnCount * ChunkPieceSizeX / 2,
+			(ChunkPieceRowCount * ChunkPieceSizeY / 2) * (ViewDistance * 3),
+			LoadUnloadChunkMaxZ / 2));
+
+		pBlockingVolumeX2->SetGenerateOverlapEvents(true);
+
+
+
+		pBlockingVolumeY1->SetWorldLocation(FVector(GetActorLocation().X,
+			GetActorLocation().Y - (ViewDistance + 1) * fChunkYSize,
+			GetActorLocation().Z + LoadUnloadChunkMaxZ / 2));
+
+		pBlockingVolumeY1->SetBoxExtent(FVector((ChunkPieceColumnCount * ChunkPieceSizeX / 2) * (ViewDistance * 3),
+			ChunkPieceRowCount * ChunkPieceSizeY / 2,
+			LoadUnloadChunkMaxZ / 2));
+
+		pBlockingVolumeY1->SetGenerateOverlapEvents(true);
+
+
+
+		pBlockingVolumeY2->SetWorldLocation(FVector(GetActorLocation().X,
+			GetActorLocation().Y + (ViewDistance + 1) * fChunkYSize,
+			GetActorLocation().Z + LoadUnloadChunkMaxZ / 2));
+
+		pBlockingVolumeY2->SetBoxExtent(FVector((ChunkPieceColumnCount * ChunkPieceSizeX / 2) * (ViewDistance * 3),
+			ChunkPieceRowCount * ChunkPieceSizeY / 2,
+			LoadUnloadChunkMaxZ / 2));
+
+		pBlockingVolumeY2->SetGenerateOverlapEvents(true);
 	}
 }
 
@@ -2048,7 +2152,36 @@ void FWGenChunkMap::setCurrentChunk(AFWGChunk* pChunk)
 			return;
 		}
 
+		float fChunkXSize = pGen->ChunkPieceColumnCount * pGen->ChunkPieceSizeX;
+		float fChunkYSize = pGen->ChunkPieceRowCount * pGen->ChunkPieceSizeY;
+
 		mtxLoadChunks.lock();
+
+
+
+		// Move blocking volumes.
+
+		FVector volumeLocation = pGen->pBlockingVolumeX1->GetComponentLocation();
+		volumeLocation.X += offsetX * fChunkXSize;
+		volumeLocation.Y += offsetY * fChunkYSize;
+		pGen->pBlockingVolumeX1->SetWorldLocation(volumeLocation);
+
+		volumeLocation = pGen->pBlockingVolumeX2->GetComponentLocation();
+		volumeLocation.X += offsetX * fChunkXSize;
+		volumeLocation.Y += offsetY * fChunkYSize;
+		pGen->pBlockingVolumeX2->SetWorldLocation(volumeLocation);
+
+		volumeLocation = pGen->pBlockingVolumeY1->GetComponentLocation();
+		volumeLocation.X += offsetX * fChunkXSize;
+		volumeLocation.Y += offsetY * fChunkYSize;
+		pGen->pBlockingVolumeY1->SetWorldLocation(volumeLocation);
+
+		volumeLocation = pGen->pBlockingVolumeY2->GetComponentLocation();
+		volumeLocation.X += offsetX * fChunkXSize;
+		volumeLocation.Y += offsetY * fChunkYSize;
+		pGen->pBlockingVolumeY2->SetWorldLocation(volumeLocation);
+
+
 
 		long long iX = pChunk->iX + (offsetX * pGen->ViewDistance);
 		long long iY = pChunk->iY + (offsetY * pGen->ViewDistance);
