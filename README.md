@@ -144,6 +144,9 @@ And Spawn Grass function:
 <p align="center">
   <img width="800" height="450" src="pics/Example BindFunctionToSpawn 2.jpg">
 </p>
+<br>
+And don't forget to set the culling in the Hierarchical Instanced Static Mesh Component if you don't want to melt your PC.
+<br>
 If you want to spawn something which is not like grass or trees (i.e. not through Hierarchical Instanced Static Mesh) then be sure to set the "Always Spawn, Ignore Collisions" option in the Collision Handling Override param in the SpawnActor node OR spawn your actors a little higher than the given transform.<br>
 <br>
 Please note that if you want to call GenerateWorld() again you need to delete all actors that you've spawned.<br>

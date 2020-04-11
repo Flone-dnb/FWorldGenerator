@@ -316,10 +316,10 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
-		int32 DivideChunkXCount = 200;
+		int32 DivideChunkXCount = 700;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
-		int32 DivideChunkYCount = 200;
+		int32 DivideChunkYCount = 700;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
 		float MaxOffsetByX = 1.0f;
