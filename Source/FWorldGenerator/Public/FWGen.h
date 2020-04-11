@@ -203,10 +203,10 @@ public:
 #endif // WITH_EDITOR
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		int32 ChunkPieceRowCount = 300;
+		int32 ChunkPieceRowCount = 200;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
-		int32 ChunkPieceColumnCount = 300;
+		int32 ChunkPieceColumnCount = 200;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
 		float ChunkPieceSizeX = 300.0f;
@@ -224,7 +224,7 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		float GenerationFrequency = 0.6f;
+		float GenerationFrequency = 0.55f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
 		int32 GenerationOctaves = 7;
@@ -233,7 +233,7 @@ public:
 		int32 GenerationSeed = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
-		float GenerationMaxZFromActorZ = 50000.0f;
+		float GenerationMaxZFromActorZ = 45000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
 		bool  InvertWorld = false;
