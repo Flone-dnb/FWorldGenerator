@@ -42,7 +42,8 @@ public:
 	~AFWGen();
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
-		bool          BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName, float Layer, float ProbabilityToSpawn, bool IsBlocking);
+		bool          BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName, float Layer,
+			float ProbabilityToSpawn, bool IsBlocking);
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		void          UnBindFunctionToSpawn(FString FunctionName);
@@ -52,6 +53,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		void          RemoveOverlapToActorClass(UClass* OverlapToClass);
+
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		FVector       GetFreeCellLocation(float Layer, bool SetBlocking = true);
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		void          GenerateWorld();
@@ -366,8 +370,8 @@ private:
 	void  spawnObjects             (AFWGChunk* pOnlyForThisChunk = nullptr);
 	void  createTriggerBoxForChunk (AFWGChunk* pChunk);
 
-	bool areEqual                  (float a, float b, float eps);
-	void compareHeightDifference   (AFWGChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff);
+	bool  areEqual                 (float a, float b, float eps);
+	void  compareHeightDifference  (AFWGChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff);
 
 #if WITH_EDITOR
 	void refreshPreview();

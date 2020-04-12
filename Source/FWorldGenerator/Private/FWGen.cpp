@@ -169,7 +169,7 @@ AFWGen::~AFWGen()
 	}
 }
 
-bool AFWGen::BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName,  float Layer, float ProbabilityToSpawn, bool IsBlocking)
+bool AFWGen::BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName, float Layer, float ProbabilityToSpawn, bool IsBlocking)
 {
 	FWGCallback callback;
 
@@ -221,6 +221,124 @@ void AFWGen::RemoveOverlapToActorClass(UClass* OverlapToClass)
 			break;
 		}
 	}
+}
+
+FVector AFWGen::GetFreeCellLocation(float Layer, bool SetBlocking)
+{
+	FVector location;
+
+	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+	{
+		float fChunkX = GetActorLocation().X;
+		float fChunkY = GetActorLocation().Y;
+
+		if (pChunkMap->vChunks[i]->iX != 0)
+		{
+			fChunkX += (pChunkMap->vChunks[i]->iX * ChunkPieceColumnCount * ChunkPieceSizeX);
+		}
+
+		if (pChunkMap->vChunks[i]->iY != 0)
+		{
+			fChunkY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
+		}
+
+		float fStartX = fChunkX - (ChunkPieceColumnCount * ChunkPieceSizeX) / 2;
+		float fStartY = fChunkY - (ChunkPieceRowCount * ChunkPieceSizeY) / 2;
+
+		float fXCellSize = ChunkPieceColumnCount * ChunkPieceSizeX / DivideChunkXCount;
+		float fYCellSize = ChunkPieceRowCount    * ChunkPieceSizeY / DivideChunkYCount;
+
+
+		for (size_t y = 0; y < pChunkMap->vChunks[i]->vChunkCells.size(); y++)
+		{
+			for (size_t x = 0; x < pChunkMap->vChunks[i]->vChunkCells[y].size(); x++)
+			{
+				if (pChunkMap->vChunks[i]->vChunkCells[y][x])
+				{
+					continue;
+				}
+
+				location.X = fStartX + x * fXCellSize + fXCellSize / 2;
+				location.Y = fStartY + y * fYCellSize + fYCellSize / 2;
+				location.Z = GetActorLocation().Z;
+
+				FHitResult OutHit;
+				FVector TraceStart(location.X, location.Y, GetActorLocation().Z + GenerationMaxZFromActorZ + 5.0f);
+				FVector TraceEnd(location.X, location.Y, GetActorLocation().Z - 5.0f);
+				FCollisionQueryParams CollisionParams;
+
+				// Get Z.
+				if (GetWorld()->LineTraceSingleByChannel(OutHit, TraceStart, TraceEnd, ECC_Visibility, CollisionParams))
+				{
+					if (OutHit.bBlockingHit)
+					{
+						location.Z = OutHit.ImpactPoint.Z;
+					}
+				}
+
+				if ( CreateWater && (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * ZWaterLevelInWorld
+					+ GenerationMaxZFromActorZ * 0.01f)) // error
+				{
+					// Water layer.
+
+					if (areEqual(Layer, -0.5f, 0.1f))
+					{
+						if (SetBlocking)
+						{
+							pChunkMap->vChunks[i]->vChunkCells[y][x] = true;
+						}
+
+						return location;
+					}
+				}
+				else if (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * FirstMaterialMaxRelativeHeight)
+				{
+					// First layer.
+
+					if (areEqual(Layer, 0.0f, 0.1f))
+					{
+						if (SetBlocking)
+						{
+							pChunkMap->vChunks[i]->vChunkCells[y][x] = true;
+						}
+
+						return location;
+					}
+				}
+				else if (location.Z <= GetActorLocation().Z + GenerationMaxZFromActorZ * SecondMaterialMaxRelativeHeight)
+				{
+					// Second layer.
+
+					if (areEqual(Layer, 0.5f, 0.1f))
+					{
+						if (SetBlocking)
+						{
+							pChunkMap->vChunks[i]->vChunkCells[y][x] = true;
+						}
+
+						return location;
+					}
+				}
+				else
+				{
+					// Third layer.
+
+					if (areEqual(Layer, 1.0f, 0.1f))
+					{
+						if (SetBlocking)
+						{
+							pChunkMap->vChunks[i]->vChunkCells[y][x] = true;
+						}
+
+						return location;
+					}
+				}
+			}
+		}
+	}
+
+	location = FVector(0, 0, 0);
+	return location;
 }
 
 void AFWGen::GenerateWorld()

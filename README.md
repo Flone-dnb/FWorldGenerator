@@ -114,7 +114,7 @@ To generate the world in the runtime you need to call the <b>GenerateWorld()</b>
 <br>
 You need to be sure that you are creating your character in the center (central chunk) of the world OR you need to set the World Size to "-1". You can check chunk bounds by enabling the Draw Chunk Bounds option.<br>
 <br>
-BE AWARE that generating a world (probably with your custom actors (see below)) can take a while! Don't think that it stuck somewhere or froze, just take your time. For example, generating a world with the default parameters without spawning objects takes about 10-20 sec. (PIE) on my machine.<br>
+BE AWARE that generating a world (probably with your custom actors (see below)) can take a while! Don't think that it stuck somewhere or froze, just take your time. For example, generating a world with the default parameters without spawning objects may take up to a minute (PIE).<br>
 <br>
 Do not worry, you will not fall from the generated terrain, there are blocking volumes at the borders.
 
@@ -148,6 +148,8 @@ And Spawn Grass function:
 And don't forget to set the culling in the Hierarchical Instanced Static Mesh Component if you don't want to melt your PC.
 <br>
 If you want to spawn something which is not like grass or trees (i.e. not through Hierarchical Instanced Static Mesh) then be sure to set the "Always Spawn, Ignore Collisions" option in the Collision Handling Override param in the SpawnActor node OR spawn your actors a little higher than the given transform.<br>
+<br>
+And if you want to get the location of the free cell, then you can call the GetFreeCellLocation function. The SetBlocking param, if set to true, will make this cell block, so on the next GetFreeCellLocation call, you will not get this cell.
 <br>
 Please note that if you want to call GenerateWorld() again you need to delete all actors that you've spawned.<br>
 <br>
