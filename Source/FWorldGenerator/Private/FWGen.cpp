@@ -2144,6 +2144,16 @@ void FWGenChunkMap::setCurrentChunk(AFWGChunk* pChunk)
 {
 	if (pCurrentChunk)
 	{
+		if (pGen->WorldSize > 0)
+		{
+			long long iMaxCoord = pGen->WorldSize;
+
+			if (abs(pChunk->iX) == pGen->WorldSize || abs(pChunk->iY) == pGen->WorldSize)
+			{
+				return;
+			}
+		}
+
 		long long offsetX = pChunk->iX - pCurrentChunk->iX;
 		long long offsetY = pChunk->iY - pCurrentChunk->iY;
 
