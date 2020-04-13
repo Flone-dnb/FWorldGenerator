@@ -774,6 +774,11 @@ void AFWGen::applySlopeDependentBlend(AFWGChunk* pOnlyForThisChunk)
 
 void AFWGen::spawnObjects(AFWGChunk* pOnlyForThisChunk)
 {
+	if (vObjectsToSpawn.size() == 0)
+	{
+		return;
+	}
+
 	std::mt19937_64 gen(std::random_device{}());
 
 	std::uniform_real_distribution<float> urd(0.0f, 1.0f);
@@ -851,7 +856,6 @@ void AFWGen::spawnObjects(AFWGChunk* pOnlyForThisChunk)
 				vThirdLayer.push_back(vObjectsToSpawn[i]);
 			}
 		}
-
 
 
 		for (size_t y = 0; y < vChunksToProcess[i]->vChunkCells.size(); y++)
