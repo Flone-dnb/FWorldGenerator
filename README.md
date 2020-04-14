@@ -142,7 +142,7 @@ Here is the example of how you want to spawn many grass meshes on the terrain:<b
 And Spawn Grass function:
 <br>
 <p align="center">
-  <img width="600" height="150" src="pics/Example BindFunctionToSpawn 2.jpg">
+  <img width="600" height="250" src="pics/Example BindFunctionToSpawn 2.jpg">
 </p>
 <br>
 And don't forget to set the culling in the Hierarchical Instanced Static Mesh Component if you don't want to melt your PC.
