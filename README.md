@@ -133,7 +133,7 @@ If you want FWorldGenerator to spawn your custom objects in the world such as tr
     <li><b>Probability To Spawn</b> - probability from 0.0 to 1.0 with which this function will be called (on every chunk cell). See "Spawning Objects" above.</li>
     <li><b>Is Blocking</b> - should the objects of this class "block" the cell on which they are spawn so that no other object will be spawn on this cell? For example, a grass object usually should not block the cell.</li>
 </ul>
-"Function Name" should be a function that accepts Transform as the only parameter.<br>
+"Function Name" should be a function that accepts Transform, Integer64 and Integer64 (which determine the coordinates of the chunk).<br>
 Here is the example of how you want to spawn many grass meshes on the terrain:<br>
 (click to see in full size)
 <p align="center">
@@ -152,6 +152,11 @@ If you want to spawn something which is not like grass or trees (i.e. not throug
 And if you want to get the location of the free cell, then you can call the GetFreeCellLocation function. The SetBlocking param, if set to true, will make this cell block, so on the next GetFreeCellLocation call, you will not get this cell.
 <br>
 Please note that if you want to call GenerateWorld() again you need to delete all actors that you've spawned.<br>
+<br>
+If your character moves then the generator will load new chunks and unload far ones. So, you will need to despawn all actors on those far chunks.
+Using the BindFunctionToDespawnActors() function you can bind a function to despawn actors.
+The function should accept 2 Integer64 values as an input (x and y of chunk that gets unloaded).
+It's up to you to decide on how to despawn them.<br>
 <br>
 Also, you need to control the probabilities of each layer manually so that the probabilities of one layer add up to 1.0. And so you will have a probability of 4.0 in total (for 4 layers).<br>
 <br>

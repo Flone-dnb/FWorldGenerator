@@ -46,6 +46,9 @@ public:
 			float ProbabilityToSpawn, bool IsBlocking);
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		bool          BindFunctionToDespawnActors(UObject* FunctionOwner, FString FunctionName);
+
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		void          UnBindFunctionToSpawn(FString FunctionName);
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
@@ -399,6 +402,7 @@ private:
 
 
 	FWGenChunkMap*            pChunkMap;
+	FWGCallback*              pCallbackToDespawn;
 
 
 	int32                     iGeneratedSeed;

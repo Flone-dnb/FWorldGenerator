@@ -55,6 +55,7 @@ AFWGen::AFWGen()
 
 
 	pChunkMap = new FWGenChunkMap(this);
+	pCallbackToDespawn = nullptr;
 
 
 
@@ -167,6 +168,12 @@ AFWGen::~AFWGen()
 			pBlockingVolumeY2->DestroyComponent();
 		}
 	}
+
+
+	if (pCallbackToDespawn)
+	{
+		delete pCallbackToDespawn;
+	}
 }
 
 bool AFWGen::BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName, float Layer, float ProbabilityToSpawn, bool IsBlocking)
@@ -186,6 +193,29 @@ bool AFWGen::BindFunctionToSpawn(UObject* FunctionOwner, FString FunctionName, f
 			callback.pFunction = Function;
 
 			vObjectsToSpawn.push_back(callback);
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool AFWGen::BindFunctionToDespawnActors(UObject* FunctionOwner, FString FunctionName)
+{
+	for ( TFieldIterator<UFunction> FIT ( FunctionOwner->GetClass(), EFieldIteratorFlags::IncludeSuper ); FIT; ++FIT)
+	{
+		UFunction* Function = *FIT;
+		if (Function->GetName() == FunctionName)
+		{
+			if (pCallbackToDespawn == nullptr)
+			{
+				pCallbackToDespawn = new FWGCallback();
+			}
+			
+			pCallbackToDespawn->pOwner = FunctionOwner;
+			pCallbackToDespawn->sFunctionName = FunctionName;
+			pCallbackToDespawn->pFunction = Function;
 
 			return false;
 		}
@@ -999,7 +1029,19 @@ void AFWGen::spawnObjects(AFWGChunk* pOnlyForThisChunk)
 
 						FTransform transform = FTransform(FRotator(0, urd_rotation(gen), 0), location, FVector(1, 1, 1));
 
-						pCurrentLayer->operator[](k).pOwner->ProcessEvent( pCurrentLayer->operator[](k).pFunction, &transform);
+						struct params
+						{
+							FTransform transform;
+							int64 x;
+							int64 y;
+						};
+
+						params p;
+						p.transform = transform;
+						p.x = vChunksToProcess[i]->iX;
+						p.y = vChunksToProcess[i]->iY;
+
+						pCurrentLayer->operator[](k).pOwner->ProcessEvent( pCurrentLayer->operator[](k).pFunction, &p);
 
 						fFullProb += pCurrentLayer->operator[](k).fProbabilityToSpawn;
 
@@ -1834,6 +1876,7 @@ AFWGChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex
 				pNewChunk = pChunkMap->vChunks[i];
 
 				pNewChunk->setUpdate(iX, iY, bAroundCenter);
+				pNewChunk->setChunkSize(DivideChunkXCount, DivideChunkYCount);
 
 				iSectionIndex = pNewChunk->iSectionIndex;
 
@@ -2227,6 +2270,22 @@ void FWGenChunkMap::loadNewChunk(long long iLoadX, long long iLoadY, long long i
 
 
 		// Do last steps.
+
+		// Unload old actors.
+		if (pGen->pCallbackToDespawn->pFunction)
+		{
+			struct params
+			{
+				int64 x;
+				int64 y;
+			};
+
+			params p;
+			p.x = iUnloadX;
+			p.y = iUnloadY;
+
+			pGen->pCallbackToDespawn->pOwner->ProcessEvent( pGen->pCallbackToDespawn->pFunction, &p);
+		}
 
 		pGen->spawnObjects(pNewChunk);
 
