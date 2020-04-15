@@ -11,6 +11,7 @@
 
 // STL
 #include <ctime>
+#include <fstream>
 
 // Custom
 #include "FWGChunk.h"
@@ -369,6 +370,164 @@ FVector AFWGen::GetFreeCellLocation(float Layer, bool SetBlocking)
 
 	location = FVector(0, 0, 0);
 	return location;
+}
+
+void AFWGen::SaveWorldParamsToFile(FString PathToFile)
+{
+	PathToFile.Append(L".fwgs");
+
+	std::ofstream saveFile(TCHAR_TO_UTF16(*PathToFile));
+
+	// Version.
+	std::string sVersion = FWGEN_VERSION;
+	char vVersionBuffer[VERSION_SIZE];
+	memset(vVersionBuffer, 0, VERSION_SIZE);
+	std::memcpy(vVersionBuffer, sVersion.c_str(), sVersion.size());
+
+	saveFile.write(vVersionBuffer, VERSION_SIZE);
+
+	// Chunks.
+	saveFile.write(reinterpret_cast<char*>(&ChunkPieceRowCount), sizeof(ChunkPieceRowCount));
+	saveFile.write(reinterpret_cast<char*>(&ChunkPieceColumnCount), sizeof(ChunkPieceColumnCount));
+	saveFile.write(reinterpret_cast<char*>(&ChunkPieceSizeX), sizeof(ChunkPieceSizeX));
+	saveFile.write(reinterpret_cast<char*>(&ChunkPieceSizeY), sizeof(ChunkPieceSizeY));
+	saveFile.write(reinterpret_cast<char*>(&ViewDistance), sizeof(ViewDistance));
+	saveFile.write(reinterpret_cast<char*>(&LoadUnloadChunkMaxZ), sizeof(LoadUnloadChunkMaxZ));
+
+	// Generation.
+	saveFile.write(reinterpret_cast<char*>(&GenerationFrequency), sizeof(GenerationFrequency));
+	saveFile.write(reinterpret_cast<char*>(&GenerationOctaves), sizeof(GenerationOctaves));
+	saveFile.write(reinterpret_cast<char*>(&GenerationSeed), sizeof(GenerationSeed));
+	saveFile.write(reinterpret_cast<char*>(&GenerationMaxZFromActorZ), sizeof(GenerationMaxZFromActorZ));
+	saveFile.write(reinterpret_cast<char*>(&InvertWorld), sizeof(InvertWorld));
+
+	// World.
+	saveFile.write(reinterpret_cast<char*>(&WorldSize), sizeof(WorldSize));
+
+	// Ground.
+	saveFile.write(reinterpret_cast<char*>(&FirstMaterialMaxRelativeHeight), sizeof(FirstMaterialMaxRelativeHeight));
+	saveFile.write(reinterpret_cast<char*>(&SecondMaterialMaxRelativeHeight), sizeof(SecondMaterialMaxRelativeHeight));
+	saveFile.write(reinterpret_cast<char*>(&MaterialHeightMaxDeviation), sizeof(MaterialHeightMaxDeviation));
+	saveFile.write(reinterpret_cast<char*>(&TerrainCutHeightFromActorZ), sizeof(TerrainCutHeightFromActorZ));
+
+	// Water.
+	saveFile.write(reinterpret_cast<char*>(&CreateWater), sizeof(CreateWater));
+	saveFile.write(reinterpret_cast<char*>(&SecondMaterialUnderWater), sizeof(SecondMaterialUnderWater));
+	saveFile.write(reinterpret_cast<char*>(&ZWaterLevelInWorld), sizeof(ZWaterLevelInWorld));
+	saveFile.write(reinterpret_cast<char*>(&WaterSize), sizeof(WaterSize));
+
+	// Additional Steps.
+	saveFile.write(reinterpret_cast<char*>(&ApplyGroundMaterialBlend), sizeof(ApplyGroundMaterialBlend));
+	saveFile.write(reinterpret_cast<char*>(&ApplySlopeDependentBlend), sizeof(ApplySlopeDependentBlend));
+
+	// Ground Material Blend.
+	saveFile.write(reinterpret_cast<char*>(&FirstMaterialOnSecondProbability), sizeof(FirstMaterialOnSecondProbability));
+	saveFile.write(reinterpret_cast<char*>(&FirstMaterialOnThirdProbability), sizeof(FirstMaterialOnThirdProbability));
+	saveFile.write(reinterpret_cast<char*>(&SecondMaterialOnFirstProbability), sizeof(SecondMaterialOnFirstProbability));
+	saveFile.write(reinterpret_cast<char*>(&SecondMaterialOnThirdProbability), sizeof(SecondMaterialOnThirdProbability));
+	saveFile.write(reinterpret_cast<char*>(&ThirdMaterialOnFirstProbability), sizeof(ThirdMaterialOnFirstProbability));
+	saveFile.write(reinterpret_cast<char*>(&ThirdMaterialOnSecondProbability), sizeof(ThirdMaterialOnSecondProbability));
+	saveFile.write(reinterpret_cast<char*>(&IncreasedMaterialBlendProbability), sizeof(IncreasedMaterialBlendProbability));
+
+	// Slope Dependent Blend.
+	saveFile.write(reinterpret_cast<char*>(&MinSlopeHeightMultiplier), sizeof(MinSlopeHeightMultiplier));
+
+	// Spawning Objects.
+	saveFile.write(reinterpret_cast<char*>(&DivideChunkXCount), sizeof(DivideChunkXCount));
+	saveFile.write(reinterpret_cast<char*>(&DivideChunkYCount), sizeof(DivideChunkYCount));
+	saveFile.write(reinterpret_cast<char*>(&MaxOffsetByX), sizeof(MaxOffsetByX));
+	saveFile.write(reinterpret_cast<char*>(&MaxOffsetByY), sizeof(MaxOffsetByY));
+	saveFile.write(reinterpret_cast<char*>(&MaxRotation), sizeof(MaxRotation));
+	saveFile.write(reinterpret_cast<char*>(&MaxZDiffInCell), sizeof(MaxZDiffInCell));
+
+	saveFile.close();
+
+	LastSaveLoadOperationStatus = true;
+}
+
+void AFWGen::LoadWorldParamsFromFile(FString PathToFile)
+{
+	std::ifstream readFile(TCHAR_TO_UTF16(*PathToFile));
+
+	if (readFile.is_open() == false)
+	{
+		LastSaveLoadOperationStatus = false;
+		return;
+	}
+
+	// Version.
+	char vVersionBuffer[VERSION_SIZE];
+	memset(vVersionBuffer, 0, VERSION_SIZE);
+
+	readFile.read(vVersionBuffer, VERSION_SIZE);
+
+
+	std::string sVersion(vVersionBuffer);
+
+	if (sVersion.substr(0, 3) != "FWG")
+	{
+		LastSaveLoadOperationStatus = false;
+		return;
+	}
+	
+
+	// Chunks.
+	readFile.read(reinterpret_cast<char*>(&ChunkPieceRowCount), sizeof(ChunkPieceRowCount));
+	readFile.read(reinterpret_cast<char*>(&ChunkPieceColumnCount), sizeof(ChunkPieceColumnCount));
+	readFile.read(reinterpret_cast<char*>(&ChunkPieceSizeX), sizeof(ChunkPieceSizeX));
+	readFile.read(reinterpret_cast<char*>(&ChunkPieceSizeY), sizeof(ChunkPieceSizeY));
+	readFile.read(reinterpret_cast<char*>(&ViewDistance), sizeof(ViewDistance));
+	readFile.read(reinterpret_cast<char*>(&LoadUnloadChunkMaxZ), sizeof(LoadUnloadChunkMaxZ));
+
+	// Generation.
+	readFile.read(reinterpret_cast<char*>(&GenerationFrequency), sizeof(GenerationFrequency));
+	readFile.read(reinterpret_cast<char*>(&GenerationOctaves), sizeof(GenerationOctaves));
+	readFile.read(reinterpret_cast<char*>(&GenerationSeed), sizeof(GenerationSeed));
+	readFile.read(reinterpret_cast<char*>(&GenerationMaxZFromActorZ), sizeof(GenerationMaxZFromActorZ));
+	readFile.read(reinterpret_cast<char*>(&InvertWorld), sizeof(InvertWorld));
+
+	// World.
+	readFile.read(reinterpret_cast<char*>(&WorldSize), sizeof(WorldSize));
+
+	// Ground.
+	readFile.read(reinterpret_cast<char*>(&FirstMaterialMaxRelativeHeight), sizeof(FirstMaterialMaxRelativeHeight));
+	readFile.read(reinterpret_cast<char*>(&SecondMaterialMaxRelativeHeight), sizeof(SecondMaterialMaxRelativeHeight));
+	readFile.read(reinterpret_cast<char*>(&MaterialHeightMaxDeviation), sizeof(MaterialHeightMaxDeviation));
+	readFile.read(reinterpret_cast<char*>(&TerrainCutHeightFromActorZ), sizeof(TerrainCutHeightFromActorZ));
+
+	// Water.
+	readFile.read(reinterpret_cast<char*>(&CreateWater), sizeof(CreateWater));
+	readFile.read(reinterpret_cast<char*>(&SecondMaterialUnderWater), sizeof(SecondMaterialUnderWater));
+	readFile.read(reinterpret_cast<char*>(&ZWaterLevelInWorld), sizeof(ZWaterLevelInWorld));
+	readFile.read(reinterpret_cast<char*>(&WaterSize), sizeof(WaterSize));
+
+	// Additional Steps.
+	readFile.read(reinterpret_cast<char*>(&ApplyGroundMaterialBlend), sizeof(ApplyGroundMaterialBlend));
+	readFile.read(reinterpret_cast<char*>(&ApplySlopeDependentBlend), sizeof(ApplySlopeDependentBlend));
+
+	// Ground Material Blend.
+	readFile.read(reinterpret_cast<char*>(&FirstMaterialOnSecondProbability), sizeof(FirstMaterialOnSecondProbability));
+	readFile.read(reinterpret_cast<char*>(&FirstMaterialOnThirdProbability), sizeof(FirstMaterialOnThirdProbability));
+	readFile.read(reinterpret_cast<char*>(&SecondMaterialOnFirstProbability), sizeof(SecondMaterialOnFirstProbability));
+	readFile.read(reinterpret_cast<char*>(&SecondMaterialOnThirdProbability), sizeof(SecondMaterialOnThirdProbability));
+	readFile.read(reinterpret_cast<char*>(&ThirdMaterialOnFirstProbability), sizeof(ThirdMaterialOnFirstProbability));
+	readFile.read(reinterpret_cast<char*>(&ThirdMaterialOnSecondProbability), sizeof(ThirdMaterialOnSecondProbability));
+	readFile.read(reinterpret_cast<char*>(&IncreasedMaterialBlendProbability), sizeof(IncreasedMaterialBlendProbability));
+
+	// Slope Dependent Blend.
+	readFile.read(reinterpret_cast<char*>(&MinSlopeHeightMultiplier), sizeof(MinSlopeHeightMultiplier));
+
+	// Spawning Objects.
+	readFile.read(reinterpret_cast<char*>(&DivideChunkXCount), sizeof(DivideChunkXCount));
+	readFile.read(reinterpret_cast<char*>(&DivideChunkYCount), sizeof(DivideChunkYCount));
+	readFile.read(reinterpret_cast<char*>(&MaxOffsetByX), sizeof(MaxOffsetByX));
+	readFile.read(reinterpret_cast<char*>(&MaxOffsetByY), sizeof(MaxOffsetByY));
+	readFile.read(reinterpret_cast<char*>(&MaxRotation), sizeof(MaxRotation));
+	readFile.read(reinterpret_cast<char*>(&MaxZDiffInCell), sizeof(MaxZDiffInCell));
+
+	readFile.close();
+
+	LastSaveLoadOperationStatus = true;
 }
 
 void AFWGen::GenerateWorld()
@@ -1290,6 +1449,20 @@ void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 		refreshPreview();
 
 		if (ComplexPreview) GenerateWorld();
+	}
+	else if (MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, ReadParamsFromFileRightNow))
+	{
+		if (ReadParamsFromFileRightNow)
+		{
+			LoadWorldParamsFromFile(PathToSaveFile);
+		}
+	}
+	else if (MemberPropertyChanged == GET_MEMBER_NAME_CHECKED(AFWGen, SaveParamsToFileRightNow))
+	{
+		if (SaveParamsToFileRightNow)
+		{
+			SaveWorldParamsToFile(PathToSaveFile);
+		}
 	}
 	else
 	{

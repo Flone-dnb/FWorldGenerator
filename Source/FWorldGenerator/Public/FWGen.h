@@ -23,6 +23,10 @@
 class UStaticMeshComponent;
 
 
+#define VERSION_SIZE 20
+// Max size: 20 chars.
+#define FWGEN_VERSION "FWG 1.0.0"
+
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------
@@ -59,6 +63,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		FVector       GetFreeCellLocation(float Layer, bool SetBlocking = true);
+
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		void          SaveWorldParamsToFile(FString PathToFile);
+
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		void          LoadWorldParamsFromFile(FString PathToFile);
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		void          GenerateWorld();
@@ -202,11 +212,27 @@ public:
 
 
 #if WITH_EDITOR
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
 		bool  ComplexPreview = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
 		bool  DrawChunkBounds = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Save / Load")
+		FString  FWGenVersion = FWGEN_VERSION;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Save / Load")
+		bool  ReadParamsFromFileRightNow = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Save / Load")
+		bool  SaveParamsToFileRightNow = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Save / Load")
+		FString  PathToSaveFile = L"";
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Save / Load")
+		bool  LastSaveLoadOperationStatus = false;
 #endif // WITH_EDITOR
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
