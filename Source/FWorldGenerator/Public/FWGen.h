@@ -338,7 +338,7 @@ public:
 		float MaxRotation = 360.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning Objects")
-		float MaxZDiffInCell = 50.0f;
+		float MaxZDiffInCell = 45.0f;
 
 protected:
 

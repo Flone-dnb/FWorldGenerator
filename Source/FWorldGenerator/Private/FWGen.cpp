@@ -1016,7 +1016,7 @@ void AFWGen::spawnObjects(AFWGChunk* pOnlyForThisChunk)
 					float fNextValue = 1.0f - fFullProb;
 					if (k != pCurrentLayer->size() - 1)
 					{
-						fNextValue =  pCurrentLayer->operator[](k).fProbabilityToSpawn;
+						fNextValue = pCurrentLayer->operator[](k).fProbabilityToSpawn;
 					}
 
 					if ((fGeneratedProbForThisCell > fFullProb) && (fGeneratedProbForThisCell <= fFullProb + fNextValue) )
@@ -2272,7 +2272,7 @@ void FWGenChunkMap::loadNewChunk(long long iLoadX, long long iLoadY, long long i
 		// Do last steps.
 
 		// Unload old actors.
-		if (pGen->pCallbackToDespawn->pFunction)
+		if (pGen->pCallbackToDespawn)
 		{
 			struct params
 			{
