@@ -173,3 +173,7 @@ Although there are still a lot of things to do, FWorldGenerator has functions to
 # Functions
 
 You can set the parameters of the generator in the Editor but you also can do this in the Blueprints (or C++ code) by calling functions from the "FWorldGenerator" category. Functions usually called like this: "Set(parameter name)". Functions that return bool will return true if your passed value was incorrect or out of valid range. See Parameters (above) to see their valid values range.
+
+# P.S.
+
+There are still a lot of things to implement, don't think that this is a final version and so I will try to find the time for it.
