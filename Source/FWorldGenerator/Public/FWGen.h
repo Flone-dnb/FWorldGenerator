@@ -71,7 +71,13 @@ public:
 		void          LoadWorldParamsFromFile(FString PathToFile);
 
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
-		void          GenerateWorld();
+		void          GenerateWorld(int64 iCentralChunkX = 0, int64 iCentralChunkY = 0, AActor* Character = nullptr);
+
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		int64     GetCentralChunkX();
+
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		int64     GetCentralChunkY();
 
 
 	// "Set" functions
@@ -473,6 +479,9 @@ public:
 	void clearWorld(UProceduralMeshComponent* pProcMeshComponent);
 
 	void setCurrentChunk(AFWGChunk* pChunk);
+
+	long long getCentralChunkX();
+	long long getCentralChunkY();
 
 	~FWGenChunkMap();
 

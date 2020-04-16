@@ -530,7 +530,7 @@ void AFWGen::LoadWorldParamsFromFile(FString PathToFile)
 	LastSaveLoadOperationStatus = true;
 }
 
-void AFWGen::GenerateWorld()
+void AFWGen::GenerateWorld(int64 iCentralChunkX, int64 iCentralChunkY, AActor* pCharacter)
 {
 	if (pChunkMap)
 	{
@@ -550,13 +550,13 @@ void AFWGen::GenerateWorld()
 		int32 iSectionIndex = 0;
 
 		
-		for (long long y = ViewDistance; y > -ViewDistance - 1; y--)
+		for (long long y = iCentralChunkY + ViewDistance; y > iCentralChunkY - ViewDistance - 1; y--)
 		{
-			for (long long x = -ViewDistance; x < ViewDistance + 1; x++)
+			for (long long x = iCentralChunkX - ViewDistance; x < iCentralChunkX + ViewDistance + 1; x++)
 			{
 				bool bAroundCenter = false;
 
-				if ((x <= 1) && (x >= -1) && (y <= 1) && (y >= -1))
+				if ((x <= iCentralChunkX + 1) && (x >= iCentralChunkX - 1) && (y <= iCentralChunkY + 1) && (y >= iCentralChunkY - 1))
 				{
 					bAroundCenter = true;
 				}
@@ -565,7 +565,7 @@ void AFWGen::GenerateWorld()
 
 				pChunkMap->addChunk(pNewChunk);
 
-				if (x == 0 && y == 0)
+				if (x == iCentralChunkX && y == iCentralChunkY)
 				{
 					pChunkMap->setCurrentChunk(pNewChunk);
 				}
@@ -578,7 +578,7 @@ void AFWGen::GenerateWorld()
 	}
 	else
 	{
-		AFWGChunk* pNewChunk = generateChunk(0, 0, 0, false);
+		AFWGChunk* pNewChunk = generateChunk(iCentralChunkX, iCentralChunkY, 0, false);
 
 		pChunkMap->addChunk(pNewChunk);
 
@@ -635,7 +635,30 @@ void AFWGen::GenerateWorld()
 
 	spawnObjects();
 
+	if (iCentralChunkX != 0 || iCentralChunkY != 0)
+	{
+		float fChunkX = GetActorLocation().X;
+		float fChunkY = GetActorLocation().Y;
 
+		if (GetCentralChunkX() != 0)
+		{
+			// Left or right chunk
+
+			fChunkX += (GetCentralChunkX() * ChunkPieceColumnCount * ChunkPieceSizeX);
+		}
+
+		if (GetCentralChunkY() != 0)
+		{
+			// Top or bottom chunk
+
+			fChunkY += (GetCentralChunkY() * ChunkPieceRowCount * ChunkPieceSizeY);
+		}
+
+		fChunkX += ChunkPieceColumnCount * ChunkPieceSizeX / 2;
+		fChunkY += ChunkPieceRowCount * ChunkPieceSizeY / 2;
+
+		pCharacter->SetActorLocation(FVector(fChunkX, fChunkY, pCharacter->GetActorLocation().Z));
+	}
 	
 	if (WorldSize != -1)
 	{
@@ -728,6 +751,16 @@ void AFWGen::GenerateWorld()
 
 		pBlockingVolumeY2->SetGenerateOverlapEvents(true);
 	}
+}
+
+long long AFWGen::GetCentralChunkX()
+{
+	return pChunkMap->getCentralChunkX();
+}
+
+long long AFWGen::GetCentralChunkY()
+{
+	return pChunkMap->getCentralChunkY();
 }
 
 void AFWGen::blendWorldMaterialsMore(AFWGChunk* pOnlyForThisChunk)
@@ -2579,6 +2612,30 @@ void FWGenChunkMap::setCurrentChunk(AFWGChunk* pChunk)
 	else
 	{
 		pCurrentChunk = pChunk;
+	}
+}
+
+long long FWGenChunkMap::getCentralChunkX()
+{
+	if (pCurrentChunk)
+	{
+		return pCurrentChunk->iX;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+long long FWGenChunkMap::getCentralChunkY()
+{
+	if (pCurrentChunk)
+	{
+		return pCurrentChunk->iY;
+	}
+	else
+	{
+		return 0;
 	}
 }
 
