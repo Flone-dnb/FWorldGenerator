@@ -3,7 +3,6 @@
 <p align="center">
   <img width="1000" height="600" src="pics/FWorldGenerator.jpg">
 </p>
-<br>
 Example of the infinite world generated with the default settings and custom user objects by the FWorldGenerator (note that the world is loading by chunks).
 <br>
 (far away objects were culled for performance reasons)
