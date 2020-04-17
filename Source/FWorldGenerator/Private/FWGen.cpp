@@ -19,7 +19,7 @@
 // External
 #include "PerlinNoise.hpp"
 
-#if WITH_EDITOR
+#if !UE_BUILD_SHIPPING
 #include "DrawDebugHelpers.h"
 #include <EngineGlobals.h>
 #endif // WITH_EDITOR
@@ -101,7 +101,7 @@ AFWGen::AFWGen()
 
 	// Preview Plane
 
-#if WITH_EDITOR
+#if !UE_BUILD_SHIPPING
 	PreviewPlane = CreateDefaultSubobject<UBoxComponent>("PreviewPlane");
 	PreviewPlane->SetupAttachment(RootComponent);
 	PreviewPlane->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -442,7 +442,9 @@ void AFWGen::SaveWorldParamsToFile(FString PathToFile)
 
 	saveFile.close();
 
+#if !UE_BUILD_SHIPPING
 	LastSaveLoadOperationStatus = true;
+#endif
 }
 
 void AFWGen::LoadWorldParamsFromFile(FString PathToFile)
@@ -451,7 +453,9 @@ void AFWGen::LoadWorldParamsFromFile(FString PathToFile)
 
 	if (readFile.is_open() == false)
 	{
+#if !UE_BUILD_SHIPPING
 		LastSaveLoadOperationStatus = false;
+#endif
 		return;
 	}
 
@@ -466,7 +470,9 @@ void AFWGen::LoadWorldParamsFromFile(FString PathToFile)
 
 	if (sVersion.substr(0, 3) != "FWG")
 	{
+#if !UE_BUILD_SHIPPING
 		LastSaveLoadOperationStatus = false;
+#endif
 		return;
 	}
 	
@@ -527,7 +533,9 @@ void AFWGen::LoadWorldParamsFromFile(FString PathToFile)
 
 	readFile.close();
 
+#if !UE_BUILD_SHIPPING
 	LastSaveLoadOperationStatus = true;
+#endif
 }
 
 void AFWGen::GenerateWorld(int64 iCentralChunkX, int64 iCentralChunkY, AActor* pCharacter)
@@ -664,7 +672,7 @@ void AFWGen::GenerateWorld(int64 iCentralChunkX, int64 iCentralChunkY, AActor* p
 	{
 		// Create triggers.
 
-#if WITH_EDITOR
+#if !UE_BUILD_SHIPPING
 		FlushPersistentDebugLines(GetWorld());
 #endif // WITH_EDITOR
 
@@ -690,7 +698,7 @@ void AFWGen::GenerateWorld(int64 iCentralChunkX, int64 iCentralChunkY, AActor* p
 
 			createTriggerBoxForChunk(pChunkMap->vChunks[i]);
 
-#if WITH_EDITOR
+#if !UE_BUILD_SHIPPING
 			if (DrawChunkBounds)
 			{
 				DrawDebugBox(GetWorld(), FVector(fTriggerX, fTriggerY, fTriggerZ), FVector (
@@ -1295,7 +1303,7 @@ void AFWGen::SetMaxZDiffInCell(float fNewMaxZDiffInCell)
 	MaxZDiffInCell = fNewMaxZDiffInCell;
 }
 
-#if WITH_EDITOR
+#if !UE_BUILD_SHIPPING
 
 void AFWGen::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
@@ -1796,7 +1804,7 @@ void AFWGen::SetWaterMaterial(UMaterialInterface* NewWaterMaterial)
 	WaterMaterial = NewWaterMaterial;
 }
 
-#if WITH_EDITOR
+#if !UE_BUILD_SHIPPING
 void AFWGen::PostEditMove(bool bFinished)
 {
 	Super::PostEditMove(bFinished);
@@ -2257,7 +2265,7 @@ AFWGChunk* AFWGen::generateChunk(long long iX, long long iY, int32 iSectionIndex
 	return pNewChunk;
 }
 
-#if WITH_EDITOR
+#if !UE_BUILD_SHIPPING
 void AFWGen::refreshPreview()
 {
 	if (WorldSize == -1)

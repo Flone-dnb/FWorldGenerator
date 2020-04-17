@@ -210,14 +210,14 @@ public:
 			void SetMaxZDiffInCell(float fNewMaxZDiffInCell);
 
 
-#if WITH_EDITOR
+#if !UE_BUILD_SHIPPING
 	virtual void  PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void  PostEditMove          (bool bFinished);
 #endif // WITH_EDITOR
 
 
-
-#if WITH_EDITOR
+//#if !UE_BUILD_SHIPPING
+#if WITH_EDITORONLY_DATA
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
 		bool  ComplexPreview = false;
@@ -388,7 +388,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Default)
 		UStaticMeshComponent* WaterPlane;
 
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
+//#if !UE_BUILD_SHIPPING
 	UPROPERTY()
 		UBoxComponent* PreviewPlane;
 #endif // WITH_EDITOR
@@ -408,7 +409,8 @@ private:
 	bool  areEqual                 (float a, float b, float eps);
 	void  compareHeightDifference  (AFWGChunk* pChunk, std::vector<bool>& vProcessedVertices, float& fCurrentZ, size_t iCompareToIndex, float& fSteepSlopeMinHeightDiff);
 
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
+//#if !UE_BUILD_SHIPPING
 	void refreshPreview();
 #endif // WITH_EDITOR
 
