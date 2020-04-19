@@ -79,6 +79,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
 		int64     GetCentralChunkY();
 
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		int64     GetChunkXByLocation(FVector Location);
+
+	UFUNCTION(BlueprintCallable, Category = "FWorldGenerator")
+		int64     GetChunkYByLocation(FVector Location);
+
 
 	// "Set" functions
 		

@@ -771,6 +771,46 @@ long long AFWGen::GetCentralChunkY()
 	return pChunkMap->getCentralChunkY();
 }
 
+int64 AFWGen::GetChunkXByLocation(FVector Location)
+{
+	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+	{
+		float fChunkX = GetActorLocation().X;
+
+		if (pChunkMap->vChunks[i]->iX != 0)
+		{
+			fChunkX += (pChunkMap->vChunks[i]->iX * ChunkPieceColumnCount * ChunkPieceSizeX);
+		}
+
+		if (Location.X >= fChunkX && Location.X <= fChunkX + ChunkPieceColumnCount * ChunkPieceSizeX)
+		{
+			return pChunkMap->vChunks[i]->iX;
+		}
+	}
+
+	return 0;
+}
+
+int64 AFWGen::GetChunkYByLocation(FVector Location)
+{
+	for (size_t i = 0; i < pChunkMap->vChunks.size(); i++)
+	{
+		float fChunkY = GetActorLocation().Y;
+
+		if (pChunkMap->vChunks[i]->iY != 0)
+		{
+			fChunkY += (pChunkMap->vChunks[i]->iY * ChunkPieceRowCount * ChunkPieceSizeY);
+		}
+
+		if (Location.Y >= fChunkY && Location.Y >= fChunkY + ChunkPieceRowCount * ChunkPieceSizeY)
+		{
+			return pChunkMap->vChunks[i]->iY;
+		}
+	}
+
+	return 0;
+}
+
 void AFWGen::blendWorldMaterialsMore(AFWGChunk* pOnlyForThisChunk)
 {
 	std::mt19937_64 gen(std::random_device{}());
@@ -2442,6 +2482,23 @@ void FWGenChunkMap::loadNewChunk(long long iLoadX, long long iLoadY, long long i
 		}
 
 
+		// Unload old actors.
+		if (pGen->pCallbackToDespawn)
+		{
+			struct params
+			{
+				int64 x;
+				int64 y;
+			};
+
+			params p;
+			p.x = iUnloadX;
+			p.y = iUnloadY;
+
+			pGen->pCallbackToDespawn->pOwner->ProcessEvent( pGen->pCallbackToDespawn->pFunction, &p);
+		}
+
+
 		AFWGChunk* pNewChunk = pGen->generateChunk(iLoadX, iLoadY, pGen->iCurrentSectionIndex, bAroundCenter, iUnloadX, iUnloadY, true);
 
 		if (pGen->ApplyGroundMaterialBlend)
@@ -2484,22 +2541,6 @@ void FWGenChunkMap::loadNewChunk(long long iLoadX, long long iLoadY, long long i
 
 
 		// Do last steps.
-
-		// Unload old actors.
-		if (pGen->pCallbackToDespawn)
-		{
-			struct params
-			{
-				int64 x;
-				int64 y;
-			};
-
-			params p;
-			p.x = iUnloadX;
-			p.y = iUnloadY;
-
-			pGen->pCallbackToDespawn->pOwner->ProcessEvent( pGen->pCallbackToDespawn->pFunction, &p);
-		}
 
 		pGen->spawnObjects(pNewChunk);
 

@@ -164,7 +164,7 @@ Please note that if you want to call GenerateWorld() again you need to delete al
 If your character moves then the generator will load new chunks and unload far ones. So, you will need to despawn all actors on those far chunks.
 Using the BindFunctionToDespawnActors() function you can bind a function to despawn actors.
 The function should accept 2 Integer64 values as an input (x and y of chunk that gets unloaded).
-It's up to you to decide on how to despawn them.<br>
+It's up to you to decide on how to despawn them. You also can you GetChunkXByLocation() and GetChunkYByLocation() functions to see if any of your non-static objects are on the chunk that is despawning.<br>
 <br>
 Also, you need to control the probabilities of each layer manually so that the probabilities of one layer add up to 1.0. And so you will have a probability of 4.0 in total (for 4 layers).<br>
 <br>
