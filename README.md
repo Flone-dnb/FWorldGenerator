@@ -172,7 +172,9 @@ Note, if you are using Hierarchical Instanced Static Mesh Component (like shown 
 
 # Save/Load world params to/from file
 
-Inside the Editor in the "Save / Load" section of the FWGen Details tab, you can find a field for the path of the save file: "Path to Save File". Type in a path, for example: "D:/Home/save" and then click on the "Save Params to File Right Now" to make this value "true". After that, your file will be saved with the .fwgs extension. If you want to read params from this file you just need to add the ".fwgs" extension to your "D:/Home/save" to make it "D:/Home/save.fwgs" and then click on the "Read Params from File Right Now". If the path is correct and this save file has a supported save version, then the "Last Save Load Operation Status" value will be set to "true" automatically. For now, save/load operations is done like this, I didn't spend too much time on this, but in the future updates maybe this operation will have their own windows.
+Inside the Editor in the "Save / Load" section of the FWGen Details tab, you can find a field for the path of the save file: "Path to Save File". Type in a path, for example: "D:/Home/save" and then click on the "Save Params to File Right Now" to make this value "true". After that, your file will be saved with the .fwgs extension. If you want to read params from this file you just need to add the ".fwgs" extension to your "D:/Home/save" to make it "D:/Home/save.fwgs" and then click on the "Read Params from File Right Now". If the path is correct and this save file has a supported save version, then the "Last Save Load Operation Status" value will be set to "true" automatically. For now, save/load operations is done like this, I didn't spend too much time on this, but in the future updates maybe this operation will have their own windows.<br>
+<br>
+You can visit our site fwg-save-share.xyz where you can share your world params save file and download others'.
 
 # Save/Load world
 
