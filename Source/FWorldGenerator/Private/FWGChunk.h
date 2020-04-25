@@ -28,12 +28,12 @@ public:
 
 	AFWGChunk();
 
-	void setInit             (long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter);
-	void setUpdate           (long long iX, long long iY, bool bAroundCenter);
+	void setInit             (long long ix, long long iy, int32 iSectionindex, bool bAroundcenter);
+	void setUpdate           (long long ix, long long iy, bool bAroundcenter);
 	void setChunkSize        (int32 iXCount, int32 iYCount);
-	void setChunkMap         (FWGenChunkMap* pChunkMap);
+	void setChunkMap         (FWGenChunkMap* pChunkmap);
 	void setOverlapToActors  (std::vector<FString> vClasses);
-	void setMeshSection      (FProcMeshSection* pMeshSection);
+	void setMeshSection      (FProcMeshSection* pMeshsection);
 
 	~AFWGChunk();
 

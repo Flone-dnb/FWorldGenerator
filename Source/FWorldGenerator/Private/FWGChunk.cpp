@@ -28,26 +28,26 @@ void AFWGChunk::BeginPlay()
 	//pTriggerBox->OnComponentEndOverlap.AddDynamic(this, &AFWGChunk::OnEndOverlap);
 }
 
-void AFWGChunk::setInit(long long iX, long long iY, int32 iSectionIndex, bool bAroundCenter)
+void AFWGChunk::setInit(long long ix, long long iy, int32 iSectionindex, bool bAroundcenter)
 {
 	pMeshSection = nullptr;
 
-	this->iX = iX;
-	this->iY = iY;
+	this->iX = ix;
+	this->iY = iy;
 
-	this->iSectionIndex = iSectionIndex;
+	this->iSectionIndex = iSectionindex;
 
-	this->bAroundCenter = bAroundCenter;
+	this->bAroundCenter = bAroundcenter;
 }
 
-void AFWGChunk::setUpdate(long long iX, long long iY, bool bAroundCenter)
+void AFWGChunk::setUpdate(long long ix, long long iy, bool bAroundcenter)
 {
 	clearChunk();
 
-	this->iX = iX;
-	this->iY = iY;
+	this->iX = ix;
+	this->iY = iy;
 
-	this->bAroundCenter = bAroundCenter;
+	this->bAroundCenter = bAroundcenter;
 }
 
 void AFWGChunk::setChunkSize(int32 iXCount, int32 iYCount)
@@ -60,9 +60,9 @@ void AFWGChunk::setChunkSize(int32 iXCount, int32 iYCount)
 	}
 }
 
-void AFWGChunk::setChunkMap(FWGenChunkMap* pChunkMap)
+void AFWGChunk::setChunkMap(FWGenChunkMap* pChunkmap)
 {
-	this->pChunkMap = pChunkMap;
+	this->pChunkMap = pChunkmap;
 }
 
 void AFWGChunk::setOverlapToActors(std::vector<FString> vClasses)
@@ -83,9 +83,9 @@ void AFWGChunk::clearChunk()
 	vChunkCells.clear();
 }
 
-void AFWGChunk::setMeshSection(FProcMeshSection* pMeshSection)
+void AFWGChunk::setMeshSection(FProcMeshSection* pMeshsection)
 {
-	this->pMeshSection  = pMeshSection;
+	this->pMeshSection  = pMeshsection;
 }
 
 AFWGChunk::~AFWGChunk()

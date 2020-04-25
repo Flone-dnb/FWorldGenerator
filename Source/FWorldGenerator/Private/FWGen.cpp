@@ -1107,23 +1107,23 @@ void AFWGen::spawnObjects(AFWGChunk* pOnlyForThisChunk)
 		std::vector<FWGCallback> vSecondLayer;
 		std::vector<FWGCallback> vThirdLayer;
 
-		for (size_t i = 0; i < vObjectsToSpawn.size(); i++)
+		for (size_t k = 0; k < vObjectsToSpawn.size(); k++)
 		{
-			if (areEqual(vObjectsToSpawn[i].fLayer, -0.5f, 0.1f))
+			if (areEqual(vObjectsToSpawn[k].fLayer, -0.5f, 0.1f))
 			{
-				vWaterLayer.push_back(vObjectsToSpawn[i]);
+				vWaterLayer.push_back(vObjectsToSpawn[k]);
 			}
-			else if (areEqual(vObjectsToSpawn[i].fLayer, 0.0f, 0.1f))
+			else if (areEqual(vObjectsToSpawn[k].fLayer, 0.0f, 0.1f))
 			{
-				vFirstLayer.push_back(vObjectsToSpawn[i]);
+				vFirstLayer.push_back(vObjectsToSpawn[k]);
 			}
-			else if (areEqual(vObjectsToSpawn[i].fLayer, 0.5f, 0.1f))
+			else if (areEqual(vObjectsToSpawn[k].fLayer, 0.5f, 0.1f))
 			{
-				vSecondLayer.push_back(vObjectsToSpawn[i]);
+				vSecondLayer.push_back(vObjectsToSpawn[k]);
 			}
 			else
 			{
-				vThirdLayer.push_back(vObjectsToSpawn[i]);
+				vThirdLayer.push_back(vObjectsToSpawn[k]);
 			}
 		}
 
@@ -1167,10 +1167,10 @@ void AFWGen::spawnObjects(AFWGChunk* pOnlyForThisChunk)
 				vXOffset.push_back(TraceStart.X - fXCellSize / 2);
 				
 
-				for (size_t i = 0; i < vXOffset.size(); i++)
+				for (size_t k = 0; k < vXOffset.size(); k++)
 				{
-					TraceStart.X = vXOffset[i];
-					TraceEnd.X   = vXOffset[i];
+					TraceStart.X = vXOffset[k];
+					TraceEnd.X   = vXOffset[k];
 
 					if (GetWorld()->LineTraceSingleByChannel(OutHit, TraceStart, TraceEnd, ECC_Visibility, CollisionParams))
 					{
@@ -1191,10 +1191,10 @@ void AFWGen::spawnObjects(AFWGChunk* pOnlyForThisChunk)
 					vYOffset.push_back(TraceStart.Y + fYCellSize / 2);
 					vYOffset.push_back(TraceStart.Y - fYCellSize / 2);
 
-					for (size_t i = 0; i < vYOffset.size(); i++)
+					for (size_t k = 0; k < vYOffset.size(); k++)
 					{
-						TraceStart.Y = vYOffset[i];
-						TraceEnd.Y   = vYOffset[i];
+						TraceStart.Y = vYOffset[k];
+						TraceEnd.Y   = vYOffset[k];
 
 						if (GetWorld()->LineTraceSingleByChannel(OutHit, TraceStart, TraceEnd, ECC_Visibility, CollisionParams))
 						{
@@ -1685,9 +1685,9 @@ bool AFWGen::SetGenerationMaxZFromActorZ(float NewGenerationMaxZFromActorZ)
 	}
 }
 
-void AFWGen::SetInvertWorld(bool InvertWorld)
+void AFWGen::SetInvertWorld(bool Invertworld)
 {
-	this->InvertWorld = InvertWorld;
+	this->InvertWorld = Invertworld;
 }
 
 bool AFWGen::SetWorldSize(int32 NewWorldSize)
@@ -1806,9 +1806,9 @@ bool AFWGen::SetThirdMaterialOnOtherProbability(float ThirdOnFirst, float ThirdO
 	}
 }
 
-void AFWGen::SetCreateWater(bool CreateWater)
+void AFWGen::SetCreateWater(bool Createwater)
 {
-	this->CreateWater = CreateWater;
+	this->CreateWater = Createwater;
 }
 
 bool AFWGen::SetZWaterLevelInWorld(float NewZWaterLevelInWorld)
@@ -2408,29 +2408,29 @@ bool AFWGen::SetMinSlopeHeightMultiplier(float NewMinSlopeHeightMultiplier)
 	}
 }
 
-bool AFWGen::SetDivideChunkXCount(int32 DivideChunkXCount)
+bool AFWGen::SetDivideChunkXCount(int32 DivideChunkXcount)
 {
-	if (DivideChunkXCount < 1)
+	if (DivideChunkXcount < 1)
 	{
 		return true;
 	}
 	else
 	{
-		this->DivideChunkXCount = DivideChunkXCount;
+		this->DivideChunkXCount = DivideChunkXcount;
 
 		return false;
 	}
 }
 
-bool AFWGen::SetDivideChunkYCount(int32 DivideChunkYCount)
+bool AFWGen::SetDivideChunkYCount(int32 DivideChunkYcount)
 {
-	if (DivideChunkYCount < 1)
+	if (DivideChunkYcount < 1)
 	{
 		return true;
 	}
 	else
 	{
-		this->DivideChunkYCount = DivideChunkYCount;
+		this->DivideChunkYCount = DivideChunkYcount;
 
 		return false;
 	}
