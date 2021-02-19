@@ -118,7 +118,7 @@ If you want your terrain to have only one material then you can just connect you
 
 To use the generator just place an object of the <b>FWGen</b> class (search in the Modes tab in UE) in your level and configure its details. Don't forget to enable Complex Preview if you want to see how it looks.<br>
 <br>
-To generate the world in the runtime you need to call the <b>GenerateWorld()</b> function from this object.<br>
+To generate the world in the runtime you need to call the <b>GenerateWorld()</b> function from this object. Passed Actor (character) will be teleported to the central chunk (Z-coord will be the same).<br>
 <br>
 You need to be sure that you are creating your character in the center (central chunk) of the world. You can check chunk bounds by enabling the Draw Chunk Bounds option.<br>
 <br>
@@ -183,7 +183,3 @@ Although there are still a lot of things to do, FWorldGenerator has functions to
 # Functions
 
 You can set the parameters of the generator in the Editor but you also can do this in the Blueprints (or C++ code) by calling functions from the "FWorldGenerator" category. Functions usually called like this: "Set(parameter name)". Functions that return bool will return true if your passed value was incorrect or out of valid range. See Parameters (above) to see their valid values range.
-
-# P.S.
-
-There are still a lot of things to implement, don't think that this is a final version and so I will try to find the time for it.
