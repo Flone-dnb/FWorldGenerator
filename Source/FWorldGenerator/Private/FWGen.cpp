@@ -667,6 +667,10 @@ void AFWGen::GenerateWorld(int64 iCentralChunkX, int64 iCentralChunkY, AActor* p
 
 		pCharacter->SetActorLocation(FVector(fChunkX, fChunkY, pCharacter->GetActorLocation().Z));
 	}
+	else if (iCentralChunkX == 0 && iCentralChunkY == 0)
+	{
+		pCharacter->SetActorLocation(FVector(GetCentralChunkX(), GetCentralChunkY(), pCharacter->GetActorLocation().Z));
+	}
 	
 	if (WorldSize != -1)
 	{
