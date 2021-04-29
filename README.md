@@ -17,7 +17,7 @@ You can configure the generator's parameters in the details tab (or through the 
 
 <h3>Preview</h3>
 <ul>
-    <li><b>Complex Preview</b> - generates one part of the world (every time a parameter is changed) as an example of how it's gonna look.</li>
+    <li><b>Complex Preview (unstable, may cause crashes)</b> - generates one part of the world (every time a parameter is changed) as an example of how it's gonna look.</li>
     <li><b>Draw Chunk Bounds</b> - draws bounds of the chunks if enabled. This could be useful to see triggers (see Load Unload Chunk Max Z parameter). Only works if the Complex Preview is enabled or if the game is started. Will not work if you have only 1 chunk.</li>
 </ul>
 
