@@ -1,5 +1,7 @@
 ﻿# FWorldGenerator
 
+<b>No longer supported because I stopped using Unreal.</b>
+
 <p align="center">
   <img width="1000" height="600" src="pics/FWorldGenerator.jpg">
 </p>
