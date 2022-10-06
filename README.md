@@ -1,6 +1,6 @@
 ﻿# FWorldGenerator
 
-<b>No longer supported because I stopped using Unreal.</b>
+<b>No longer supported, reason: the heightmap approach that this plugin uses has quite a few limitations, but it was a valuable experience. For proper procedural generation I recommend looking at the Marching Cubes algorithm.</b>
 
 <p align="center">
   <img width="1000" height="600" src="pics/FWorldGenerator.jpg">
